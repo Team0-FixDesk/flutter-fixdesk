@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fixdesk_app/service/api_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MyRepairListPage extends StatefulWidget {
   const MyRepairListPage({super.key});
@@ -9,15 +9,34 @@ class MyRepairListPage extends StatefulWidget {
 }
 
 class _MyRepairListPageState extends State<MyRepairListPage> {
-  late Future<List<dynamic>> repairs;
-
-  // 🔥 ใส่ token จริงจากระบบ (ตอนนี้ hardcode ไปก่อน)
-  final String token = 'PUT_REAL_TOKEN_HERE';
+  List<dynamic> repairs = [];
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    repairs = ApiService.getMyRepairs(token);
+    fetchRepairs();
+  }
+
+  Future<void> fetchRepairs() async {
+    try {
+      final data = await Supabase.instance.client
+          .from('repair_form')
+          .select()
+          
+          .limit(20);
+
+      setState(() {
+        repairs = data;
+        isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Supabase error: $e');
+      setState(() {
+        repairs = [];
+        isLoading = false;
+      });
+    }
   }
 
   Color statusColor(String status) {
@@ -35,41 +54,41 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('รายการแจ้งซ่อมของฉัน')),
-      body: FutureBuilder<List<dynamic>>(
-        future: repairs,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return const Center(child: Text('เกิดข้อผิดพลาด'));
-          }
-
-          final data = snapshot.data!;
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: data.length,
-            itemBuilder: (context, index) {
-              final item = data[index];
-
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  title: Text(item['repair_no']),
-                  subtitle: Text(item['detail'] ?? ''),
-                  trailing: Chip(
-                    label: Text(item['status_name']),
-                    backgroundColor:
-                        statusColor(item['status_name']).withOpacity(0.2),
-                  ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : repairs.isEmpty
+              ? const Center(child: Text('ยังไม่มีข้อมูลรายการซ่อม'))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: repairs.length,
+                  itemBuilder: (context, index) {
+                    final item = repairs[index];
+                    debugPrint('Row $index: $item'); // ดู column จริงใน console
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: ListTile(
+                        title: Text(
+                          item['rf_id']?.toString() ??
+                          item['id']?.toString() ?? '-',
+                        ),
+                        subtitle: Text(
+                          item['rf_code']?.toString() ??
+                          item['code']?.toString() ?? '',
+                        ),
+                        trailing: Chip(
+                          label: Text(
+                            item['status_name']?.toString() ??
+                            item['status']?.toString() ?? '-',
+                          ),
+                          backgroundColor: statusColor(
+                            item['status_name']?.toString() ??
+                            item['status']?.toString() ?? '-',
+                          ).withOpacity(0.2),
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
-          );
-        },
-      ),
     );
   }
 }
