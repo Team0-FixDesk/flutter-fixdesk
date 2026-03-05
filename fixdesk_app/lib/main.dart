@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'theme/app_theme.dart';
 import 'pages/login_page.dart';
-
-void main() {
-  runApp(const FixDeskApp());
+import 'service/api_service.dart';
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await ApiService.initSupabase();
+  runApp(FixDeskApp());
 }
 
 class FixDeskApp extends StatelessWidget {
