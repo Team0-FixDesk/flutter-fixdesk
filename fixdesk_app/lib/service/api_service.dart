@@ -1,6 +1,20 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ApiService {
+  static Future<bool> createRepair({
+    required String token,
+    required Map<String, dynamic> payload,
+  }) async {
+    try {
+      final result = await Supabase.instance.client
+          .from('repair_form')
+          .insert(payload);
+      return result != null;
+    } catch (e) {
+      return false;
+    }
+  }
+
   static Future<void> initSupabase() async {
     await Supabase.initialize(
       url: 'https://zokyojxouidgentyjonr.supabase.co',
@@ -11,7 +25,9 @@ class ApiService {
 
   /// Login ผ่าน Supabase ตาราง users
   static Future<Map<String, dynamic>?> login(
-      String username, String password) async {
+    String username,
+    String password,
+  ) async {
     final result = await Supabase.instance.client
         .from('users')
         .select(

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:fixdesk_app/service/api_service.dart';
 
 class MyRepairListPage extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -23,18 +23,7 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
   Future<void> fetchRepairs() async {
     try {
       final userId = widget.userData['us_id'];
-
-      final data = await Supabase.instance.client
-          .from('repair_form')
-          .select(
-            'rf_id, rf_code, rf_phone, rf_prop_number, rf_problem, '
-            'rf_detail, rf_user_status, rf_urgency, '
-            'rf_create_at, rf_update_at',
-          )
-          .eq('rf_us_id', userId)
-          .order('rf_create_at', ascending: false)
-          .limit(30);
-
+      final data = await ApiService.getMyRepairs(userId);
       setState(() {
         repairs = data;
         isLoading = false;
@@ -115,124 +104,134 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : repairs.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.inbox_outlined,
-                          size: 64, color: Colors.grey.shade400),
-                      const SizedBox(height: 12),
-                      Text(
-                        'ยังไม่มีรายการแจ้งซ่อม',
-                        style: TextStyle(
-                            fontSize: 15, color: Colors.grey.shade600),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.inbox_outlined,
+                    size: 64,
+                    color: Colors.grey.shade400,
                   ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: repairs.length,
-                  itemBuilder: (context, index) {
-                    final item = repairs[index];
-                    final status = item['rf_user_status']?.toString();
-                    final urgency = item['rf_urgency']?.toString();
+                  const SizedBox(height: 12),
+                  Text(
+                    'ยังไม่มีรายการแจ้งซ่อม',
+                    style: TextStyle(fontSize: 15, color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: repairs.length,
+              itemBuilder: (context, index) {
+                final item = repairs[index];
+                final status = item['rf_user_status']?.toString();
+                final urgency = item['rf_urgency']?.toString();
 
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            // Header Row
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    item['rf_code']?.toString() ?? '-',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15,
-                                    ),
-                                  ),
+                            Expanded(
+                              child: Text(
+                                item['rf_code']?.toString() ?? '-',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
                                 ),
-                                Icon(
-                                  _urgencyIcon(urgency),
-                                  color: _urgencyColor(urgency),
-                                  size: 18,
-                                ),
-                                const SizedBox(width: 4),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: _userStatusColor(status)
-                                        .withOpacity(0.15),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                      color: _userStatusColor(status)
-                                          .withOpacity(0.5),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    status ?? '-',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: _userStatusColor(status),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            // Problem
-                            if (item['rf_problem'] != null)
-                              Text(
-                                item['rf_problem'].toString(),
-                                style: const TextStyle(fontSize: 14),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
                               ),
-                            const SizedBox(height: 6),
-                            // Date & Asset
-                            Row(
-                              children: [
-                                Icon(Icons.calendar_today_outlined,
-                                    size: 13, color: Colors.grey.shade500),
-                                const SizedBox(width: 4),
-                                Text(
-                                  _formatDate(item['rf_create_at']?.toString()),
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey.shade600),
+                            ),
+                            Icon(
+                              _urgencyIcon(urgency),
+                              color: _urgencyColor(urgency),
+                              size: 18,
+                            ),
+                            const SizedBox(width: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _userStatusColor(
+                                  status,
+                                ).withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: _userStatusColor(
+                                    status,
+                                  ).withOpacity(0.5),
                                 ),
-                                if (item['rf_prop_number'] != null) ...[
-                                  const SizedBox(width: 12),
-                                  Icon(Icons.tag,
-                                      size: 13, color: Colors.grey.shade500),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    item['rf_prop_number'].toString(),
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey.shade600),
-                                  ),
-                                ],
-                              ],
+                              ),
+                              child: Text(
+                                status ?? '-',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: _userStatusColor(status),
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                      ),
-                    );
-                  },
-                ),
-
+                        const SizedBox(height: 8),
+                        if (item['rf_problem'] != null)
+                          Text(
+                            item['rf_problem'].toString(),
+                            style: const TextStyle(fontSize: 14),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today_outlined,
+                              size: 13,
+                              color: Colors.grey.shade500,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _formatDate(item['rf_create_at']?.toString()),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            if (item['rf_prop_number'] != null) ...[
+                              const SizedBox(width: 12),
+                              Icon(
+                                Icons.tag,
+                                size: 13,
+                                color: Colors.grey.shade500,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                item['rf_prop_number'].toString(),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }
