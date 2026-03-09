@@ -67,7 +67,7 @@ class _HomePageState extends State<HomePage> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const ReportRepairPage()),
+            MaterialPageRoute(builder: (_) => ReportRepairPage(userData: widget.userData)),
           );
         },
         child: const Icon(Icons.add),

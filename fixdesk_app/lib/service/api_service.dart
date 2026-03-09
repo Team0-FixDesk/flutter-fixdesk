@@ -1,16 +1,16 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 class ApiService {
   static Future<bool> createRepair({
     required String token,
     required Map<String, dynamic> payload,
   }) async {
     try {
-      final result = await Supabase.instance.client
-          .from('repair_form')
-          .insert(payload);
-      return result != null;
+      await Supabase.instance.client.from('repair_form').insert(payload);
+      return true;
     } catch (e) {
+      debugPrint('createRepair error: $e'); // เพิ่มบรรทัดนี้
       return false;
     }
   }
@@ -56,5 +56,31 @@ class ApiService {
         .limit(30);
 
     return data;
+  }
+
+  static Future<List<Map<String, dynamic>>> getBuildings() async {
+    final data = await Supabase.instance.client
+        .from('building')
+        .select('bd_id, bd_name')
+        .order('bd_name');
+    return List<Map<String, dynamic>>.from(data);
+  }
+
+  static Future<List<Map<String, dynamic>>> getFloors(int buildingId) async {
+    final data = await Supabase.instance.client
+        .from('floor')
+        .select('fl_id, fl_name')
+        .eq('fl_bd_id', buildingId)
+        .order('fl_name');
+    return List<Map<String, dynamic>>.from(data);
+  }
+
+  static Future<List<Map<String, dynamic>>> getRooms(int floorId) async {
+    final data = await Supabase.instance.client
+        .from('room')
+        .select('room_id, room_name')
+        .eq('room_fl_id', floorId)
+        .order('room_name');
+    return List<Map<String, dynamic>>.from(data);
   }
 }
