@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'login_page.dart';
 import 'my_repair_list_page.dart';
+import 'report_repair_page.dart';
 
 class HomePage extends StatelessWidget {
   final Map<String, dynamic> userData;
@@ -54,8 +55,7 @@ class HomePage extends StatelessWidget {
                 CircleAvatar(
                   radius: 28,
                   backgroundColor: Colors.white,
-                  child: Icon(Icons.person,
-                      size: 32, color: Colors.blue.shade700),
+                  child: Icon(Icons.person, size: 32, color: Colors.blue.shade700),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -99,7 +99,12 @@ class HomePage extends StatelessWidget {
                     label: 'แจ้งซ่อมใหม่',
                     color: Colors.blue.shade600,
                     onTap: () {
-                      // TODO: navigate to create repair page
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ReportRepairPage(userData: userData),
+                        ),
+                      );
                     },
                   ),
                   _MenuCard(
@@ -110,8 +115,7 @@ class HomePage extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) =>
-                              MyRepairListPage(userData: userData),
+                          builder: (_) => MyRepairListPage(userData: userData),
                         ),
                       );
                     },
