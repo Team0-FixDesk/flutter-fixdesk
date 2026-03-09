@@ -1,20 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ApiService {
-  static Future<bool> createRepair({
-    required String token,
-    required Map<String, dynamic> payload,
-  }) async {
-    try {
-      final result = await Supabase.instance.client
-          .from('repair_form')
-          .insert(payload);
-      return result != null;
-    } catch (e) {
-      return false;
-    }
-  }
-
   static Future<void> initSupabase() async {
     await Supabase.initialize(
       url: 'https://zokyojxouidgentyjonr.supabase.co',
@@ -56,5 +42,47 @@ class ApiService {
         .limit(30);
 
     return data;
+  }
+
+  /// สร้างรายการแจ้งซ่อม
+  static Future<bool> createRepair({
+    required String token,
+    required Map<String, dynamic> payload,
+  }) async {
+    try {
+      await Supabase.instance.client.from('repair_form').insert(payload);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// ดึงรายการอาคารทั้งหมด
+  static Future<List<Map<String, dynamic>>> getBuildings() async {
+    final data = await Supabase.instance.client
+        .from('building')
+        .select('bd_id, bd_name')
+        .order('bd_id');
+    return List<Map<String, dynamic>>.from(data);
+  }
+
+  /// ดึงรายการชั้นตามอาคาร
+  static Future<List<Map<String, dynamic>>> getFloors(int buildingId) async {
+    final data = await Supabase.instance.client
+        .from('floor')
+        .select('fl_id, fl_name')
+        .eq('fl_bd_id', buildingId)
+        .order('fl_id');
+    return List<Map<String, dynamic>>.from(data);
+  }
+
+  /// ดึงรายการห้องตามชั้น
+  static Future<List<Map<String, dynamic>>> getRooms(int floorId) async {
+    final data = await Supabase.instance.client
+        .from('room')
+        .select('room_id, room_name')
+        .eq('room_fl_id', floorId)
+        .order('room_id');
+    return List<Map<String, dynamic>>.from(data);
   }
 }
