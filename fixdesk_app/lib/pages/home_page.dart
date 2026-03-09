@@ -18,12 +18,6 @@ class _HomePageState extends State<HomePage> {
   List repairs = [];
   bool isLoadingStats = true;
 
-  @override
-  void initState() {
-    super.initState();
-    loadStats();
-  }
-
   Future<void> loadStats() async {
     final data = await ApiService.getMyRepairs(widget.userData['us_id']);
 
@@ -46,6 +40,12 @@ class _HomePageState extends State<HomePage> {
     final first = widget.userData['us_first_name_th'] ?? '';
     final last = widget.userData['us_last_name_th'] ?? '';
     return '$first $last';
+  }
+
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return '-';
+    final dt = DateTime.parse(dateStr).toLocal();
+    return '${dt.day}/${dt.month}/${dt.year + 543}';
   }
 
   @override
@@ -226,34 +226,25 @@ class _HomePageState extends State<HomePage> {
 
           /// LIST
           Expanded(
-            child: FutureBuilder(
-              future: ApiService.getMyRepairs(widget.userData['us_id']),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+            child: isLoadingStats
+                ? const Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: repairs.length > 3 ? 3 : repairs.length,
+                    itemBuilder: (context, index) {
+                      final repair = repairs[index];
 
-                final repairs = snapshot.data as List;
-
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: repairs.length > 3 ? 3 : repairs.length,
-                  itemBuilder: (context, index) {
-                    final repair = repairs[index];
-
-                    return RepairItem(
-                      title: repair['rf_problem'] ?? '',
-                      subtitle: repair['rf_create_at'] ?? '',
-                      status: repair['rf_user_status'] ?? '',
-                      color: repair['rf_user_status'] == 'เสร็จสิ้น'
-                          ? Colors.green
-                          : Colors.orange,
-                      icon: Icons.build,
-                    );
-                  },
-                );
-              },
-            ),
+                      return RepairItem(
+                        title: repair['rf_code'] ?? '',
+                        subtitle: _formatDate(repair['rf_create_at']),
+                        status: repair['rf_user_status'] ?? '',
+                        color: repair['rf_user_status'] == 'เสร็จสิ้น'
+                            ? Colors.green
+                            : Colors.orange,
+                        icon: Icons.build,
+                      );
+                    },
+                  ),
           ),
         ],
       ),
@@ -324,66 +315,60 @@ class RepairItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
-      margin: const EdgeInsets.only(bottom: 14),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color.withOpacity(.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(Icons.person, size: 32, color: Colors.blue.shade700),
-            ),
-
-            const SizedBox(width: 12),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: color.withOpacity(.2),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                status,
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
                 ),
-              ),
+
+                const SizedBox(height: 4),
+
+                Text(
+                  subtitle,
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+
+          Row(
+            children: [
+              Text(
+                status,
+                style: TextStyle(color: color, fontWeight: FontWeight.w600),
+              ),
+
+              const SizedBox(width: 6),
+
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
