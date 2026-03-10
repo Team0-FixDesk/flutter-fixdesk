@@ -18,6 +18,12 @@ class _HomePageState extends State<HomePage> {
   List repairs = [];
   bool isLoadingStats = true;
 
+  @override
+  void initState() {
+    super.initState();
+    loadStats();   // ← ต้องเรียกตรงนี้
+  }
+
   Future<void> loadStats() async {
     final data = await ApiService.getMyRepairs(widget.userData['us_id']);
 
