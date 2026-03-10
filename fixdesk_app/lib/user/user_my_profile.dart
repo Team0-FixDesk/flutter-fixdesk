@@ -19,7 +19,6 @@ class ProfilePage extends StatelessWidget {
       child: SafeArea(
         child: Column(
           children: [
-
             /// ================= HEADER =================
             Container(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
@@ -27,20 +26,19 @@ class ProfilePage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                   /// LOGO FIXDESK
                   Row(
                     children: [
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(
-                          Icons.build,
-                          color: Colors.white,
-                          size: 20,
+                        child: Image.asset(
+                          'assets/images/LOGO.png',
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.contain,
                         ),
                       ),
 
@@ -85,13 +83,11 @@ class ProfilePage extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-
                       /// TODO: Dev คนต่อไปทำต่อ
                       /// - Profile Image
                       /// - Username
                       /// - Phone
                       /// - Edit Button
-
                       Container(
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(

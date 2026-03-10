@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fixdesk_app/service/api_service.dart';
+import 'user_detail_repair.dart';
 
 class MyRepairListPage extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -17,6 +18,7 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
   TextEditingController searchController = TextEditingController();
 
   bool isLoading = true;
+  String selectedStatus = 'ทั้งหมด';
 
   @override
   void initState() {
@@ -27,7 +29,14 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
   void searchRepair(String keyword) {
     final results = repairs.where((item) {
       final code = (item['rf_code'] ?? '').toString().toLowerCase();
-      return code.contains(keyword.toLowerCase());
+      final status = item['rf_user_status'] ?? '';
+
+      bool matchKeyword = code.contains(keyword.toLowerCase());
+
+      bool matchStatus =
+          selectedStatus == 'ทั้งหมด' || _statusLabel(status) == selectedStatus;
+
+      return matchKeyword && matchStatus;
     }).toList();
 
     setState(() {
@@ -130,13 +139,13 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(
-                            Icons.build,
-                            color: Colors.white,
-                            size: 20,
+                          child: Image.asset(
+                            'assets/images/LOGO.png',
+                            width: 40,
+                            height: 40,
+                            fit: BoxFit.contain,
                           ),
                         ),
 
@@ -166,21 +175,68 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
                 const SizedBox(height: 12),
 
                 /// SEARCH
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xfff3f4f6),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: TextField(
-                    controller: searchController,
-                    onChanged: searchRepair,
-                    decoration: const InputDecoration(
-                      icon: Icon(Icons.search),
-                      hintText: "ค้นหาด้วยรหัสใบแจ้งซ่อม...",
-                      border: InputBorder.none,
+                Row(
+                  children: [
+                    /// SEARCH
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xfff3f4f6),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: TextField(
+                          controller: searchController,
+                          onChanged: searchRepair,
+                          decoration: const InputDecoration(
+                            icon: Icon(Icons.search),
+                            hintText: "ค้นหาด้วยรหัสใบแจ้งซ่อม...",
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+
+                    const SizedBox(width: 10),
+
+                    /// STATUS FILTER
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xfff3f4f6),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: DropdownButton<String>(
+                        value: selectedStatus,
+                        underline: const SizedBox(),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'ทั้งหมด',
+                            child: Text('สถานะ'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'รอดำเนินการ',
+                            child: Text('รอดำเนินการ'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'กำลังดำเนินการ',
+                            child: Text('กำลังดำเนินการ'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'ดำเนินการเสร็จสิ้น',
+                            child: Text('ดำเนินการเสร็จสิ้น'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            selectedStatus = value!;
+                          });
+
+                          searchRepair(searchController.text);
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -220,19 +276,15 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
 
                       return RepairItem(
                         code: item['rf_code'] ?? '',
-
                         title: item['rf_problem'] ?? '-',
-
                         location:
                             "${item['room_name'] ?? '-'} "
                             "ชั้น ${item['fl_name'] ?? '-'} "
                             "${item['bd_name'] ?? ''}",
-
                         priority: _urgencyLabel(item['rf_urgency']),
-
                         status: _statusLabel(status),
-
                         color: _statusColor(status),
+                        repair: item,
                       );
                     },
                   ),
@@ -256,6 +308,7 @@ class RepairItem extends StatelessWidget {
   final String priority;
   final String status;
   final Color color;
+  final Map<String, dynamic> repair;
 
   const RepairItem({
     super.key,
@@ -265,6 +318,7 @@ class RepairItem extends StatelessWidget {
     required this.priority,
     required this.status,
     required this.color,
+    required this.repair,
   });
 
   Color get priorityColor {
@@ -360,12 +414,47 @@ class RepairItem extends StatelessWidget {
           const Divider(height: 20),
 
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(Icons.access_time_rounded, size: 18, color: color),
-              const SizedBox(width: 6),
-              Text(
-                status,
-                style: TextStyle(color: color, fontWeight: FontWeight.w600),
+              Row(
+                children: [
+                  Icon(Icons.access_time_rounded, size: 18, color: color),
+                  const SizedBox(width: 6),
+                  Text(
+                    status,
+                    style: TextStyle(
+                      color: color,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+
+              InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => UserDetailRepairPage(repair: repair),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Text(
+                    "ดูรายละเอียด",
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
               ),
             ],
           ),

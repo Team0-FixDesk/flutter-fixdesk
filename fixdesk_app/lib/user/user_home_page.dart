@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fixdesk_app/service/api_service.dart';
-import 'report_repair_page.dart';
-import 'my_repair_list_page.dart';
-import 'my_profile.dart';
+import 'user_report_repair_page.dart';
+import 'user_my_repair_list_page.dart';
+import 'user_my_profile.dart';
+import 'user_detail_repair.dart';
 
 class HomePage extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -129,10 +130,10 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-  dashboard(),
-  MyRepairListPage(userData: widget.userData),
-  ProfilePage(userData: widget.userData),
-];
+      dashboard(),
+      MyRepairListPage(userData: widget.userData),
+      ProfilePage(userData: widget.userData),
+    ];
 
     return Scaffold(
       body: IndexedStack(index: currentIndex, children: pages),
@@ -204,13 +205,13 @@ class _HomePageState extends State<HomePage> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary,
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Icon(
-                              Icons.build,
-                              color: Colors.white,
-                              size: 20,
+                            child: Image.asset(
+                              'assets/images/LOGO.png',
+                              width: 40,
+                              height: 40,
+                              fit: BoxFit.contain,
                             ),
                           ),
 
@@ -325,11 +326,12 @@ class _HomePageState extends State<HomePage> {
                   : ListView.builder(
                       physics: const BouncingScrollPhysics(),
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: repairs.length > 3 ? 3 : repairs.length,
+                      itemCount: repairs.length > 5 ? 5 : repairs.length,
                       itemBuilder: (context, index) {
                         final repair = repairs[index];
 
                         return RepairItem(
+                          repair: repair,
                           code: repair['rf_code'] ?? '',
 
                           /// ดึงจาก "หัวข้อเรื่อง"
@@ -406,6 +408,7 @@ class StatCard extends StatelessWidget {
 }
 
 class RepairItem extends StatelessWidget {
+  final Map<String, dynamic> repair;
   final String code;
   final String title;
   final String location;
@@ -415,6 +418,7 @@ class RepairItem extends StatelessWidget {
 
   const RepairItem({
     super.key,
+    required this.repair,
     required this.code,
     required this.title,
     required this.location,
@@ -540,18 +544,29 @@ class RepairItem extends StatelessWidget {
                 ],
               ),
 
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Text(
-                  "ดูรายละเอียด",
-                  style: TextStyle(fontWeight: FontWeight.w600),
+              InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => UserDetailRepairPage(repair: repair),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Text(
+                    "ดูรายละเอียด",
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ),
               ),
             ],
@@ -561,4 +576,3 @@ class RepairItem extends StatelessWidget {
     );
   }
 }
-
