@@ -88,14 +88,12 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
   // แปลง urgency enum DB → ภาษาไทย
   String _urgencyLabel(String? urgency) {
     switch (urgency) {
-      case 'low':
-        return 'ปกติ';
-      case 'medium':
-        return 'ด่วน';
       case 'high':
-        return 'ด่วนมาก';
+        return 'เร่งด่วนมาก';
+      case 'medium':
+        return 'เร่งด่วน';
       default:
-        return urgency ?? '-';
+        return 'ปกติ';
     }
   }
 
@@ -220,73 +218,21 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
                       final item = filteredRepairs[index];
                       final status = item['rf_user_status']?.toString();
 
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(.05),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    (item['rf_code'] ?? '-').toString(),
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
+                      return RepairItem(
+                        code: item['rf_code'] ?? '',
 
-                                  const SizedBox(height: 4),
+                        title: item['rf_problem'] ?? '-',
 
-                                  Text(
-                                    _formatDate(
-                                      item['rf_create_at']?.toString(),
-                                    ),
-                                    style: const TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                        location:
+                            "${item['room_name'] ?? '-'} "
+                            "ชั้น ${item['fl_name'] ?? '-'} "
+                            "${item['bd_name'] ?? ''}",
 
-                            Row(
-                              children: [
-                                Text(
-                                  _statusLabel(status),
-                                  style: TextStyle(
-                                    color: _statusColor(status),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+                        priority: _urgencyLabel(item['rf_urgency']),
 
-                                const SizedBox(width: 6),
+                        status: _statusLabel(status),
 
-                                Container(
-                                  width: 10,
-                                  height: 10,
-                                  decoration: BoxDecoration(
-                                    color: _statusColor(status),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                        color: _statusColor(status),
                       );
                     },
                   ),
@@ -300,5 +246,131 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
   void dispose() {
     searchController.dispose();
     super.dispose();
+  }
+}
+
+class RepairItem extends StatelessWidget {
+  final String code;
+  final String title;
+  final String location;
+  final String priority;
+  final String status;
+  final Color color;
+
+  const RepairItem({
+    super.key,
+    required this.code,
+    required this.title,
+    required this.location,
+    required this.priority,
+    required this.status,
+    required this.color,
+  });
+
+  Color get priorityColor {
+    switch (priority) {
+      case 'เร่งด่วนมาก':
+        return const Color(0xFFF8D7DA);
+      case 'เร่งด่วน':
+        return const Color(0xFFFCE8C3);
+      default:
+        return const Color(0xFFD1F3E0);
+    }
+  }
+
+  Color get priorityTextColor {
+    switch (priority) {
+      case 'เร่งด่วนมาก':
+        return Colors.red;
+      case 'เร่งด่วน':
+        return Colors.orange;
+      default:
+        return Colors.green;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "#$code",
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: priorityColor,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  priority,
+                  style: TextStyle(
+                    color: priorityTextColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 6),
+
+          Text(
+            title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+
+          const SizedBox(height: 8),
+
+          Row(
+            children: [
+              const Icon(
+                Icons.location_on_outlined,
+                size: 16,
+                color: Colors.grey,
+              ),
+              const SizedBox(width: 4),
+              Text(location, style: const TextStyle(color: Colors.grey)),
+            ],
+          ),
+
+          const Divider(height: 20),
+
+          Row(
+            children: [
+              Icon(Icons.access_time_rounded, size: 18, color: color),
+              const SizedBox(width: 6),
+              Text(
+                status,
+                style: TextStyle(color: color, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
