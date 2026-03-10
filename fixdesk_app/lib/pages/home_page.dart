@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:fixdesk_app/service/api_service.dart';
 import 'report_repair_page.dart';
 import 'my_repair_list_page.dart';
-import 'report_repair_page.dart';
 
 class HomePage extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -22,16 +21,25 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    loadStats();   // ← ต้องเรียกตรงนี้
+    loadStats(); // ← ต้องเรียกตรงนี้
   }
 
   Future<void> loadStats() async {
-    final data = await ApiService.getMyRepairs(widget.userData['us_id']);
+    try {
+      final data = await ApiService.getMyRepairs(widget.userData['us_id']);
 
-    setState(() {
-      repairs = data;
-      isLoadingStats = false;
-    });
+      if (!mounted) return;
+
+      setState(() {
+        repairs = data ?? [];
+        isLoadingStats = false;
+      });
+    } catch (e) {
+      setState(() {
+        repairs = [];
+        isLoadingStats = false;
+      });
+    }
   }
 
   /// ใส่ตรงนี้
@@ -51,8 +59,32 @@ class _HomePageState extends State<HomePage> {
 
   String _formatDate(String? dateStr) {
     if (dateStr == null) return '-';
-    final dt = DateTime.parse(dateStr).toLocal();
-    return '${dt.day}/${dt.month}/${dt.year + 543}';
+
+    try {
+      final dt = DateTime.parse(dateStr).toLocal();
+      return '${dt.day}/${dt.month}/${dt.year + 543}';
+    } catch (_) {
+      return dateStr;
+    }
+  }
+
+  String _statusLabel(String? status) {
+    switch (status) {
+      case 'pending':
+        return 'รอดำเนินการ';
+
+      case 'in_progress':
+        return 'กำลังดำเนินการ';
+
+      case 'done':
+        return 'เสร็จสิ้น';
+
+      case 'cancelled':
+        return 'ยกเลิก';
+
+      default:
+        return status ?? '-';
+    }
   }
 
   @override
@@ -74,7 +106,9 @@ class _HomePageState extends State<HomePage> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const ReportRepairPage()),
+            MaterialPageRoute(
+              builder: (_) => ReportRepairPage(userData: widget.userData),
+            ),
           );
         },
         child: const Icon(Icons.add),
@@ -242,11 +276,15 @@ class _HomePageState extends State<HomePage> {
                       final repair = repairs[index];
 
                       return RepairItem(
-                        title: repair['rf_code'] ?? '',
+                        title: repair['rf_code']?.toString() ?? '',
                         subtitle: _formatDate(repair['rf_create_at']),
-                        status: repair['rf_user_status'] ?? '',
-                        color: repair['rf_user_status'] == 'เสร็จสิ้น'
+                        status: _statusLabel(
+                          repair['rf_user_status']?.toString(),
+                        ),
+                        color: repair['rf_user_status'] == 'done'
                             ? Colors.green
+                            : repair['rf_user_status'] == 'in_progress'
+                            ? Colors.blue
                             : Colors.orange,
                         icon: Icons.build,
                       );

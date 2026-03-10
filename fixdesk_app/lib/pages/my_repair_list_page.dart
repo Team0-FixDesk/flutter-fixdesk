@@ -57,31 +57,45 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
   // แปลง enum DB → ภาษาไทย
   String _statusLabel(String? status) {
     switch (status) {
-      case 'pending':      return 'รอดำเนินการ';
-      case 'in_progress':  return 'กำลังดำเนินการ';
-      case 'done':         return 'เสร็จสิ้น';
-      case 'cancelled':    return 'ยกเลิก';
-      default:             return status ?? '-';
+      case 'pending':
+        return 'รอดำเนินการ';
+      case 'in_progress':
+        return 'กำลังดำเนินการ';
+      case 'done':
+        return 'เสร็จสิ้น';
+      case 'cancelled':
+        return 'ยกเลิก';
+      default:
+        return status ?? '-';
     }
   }
 
   Color _statusColor(String? status) {
     switch (status) {
-      case 'pending':     return Colors.orange;
-      case 'in_progress': return Colors.blue;
-      case 'done':        return Colors.green;
-      case 'cancelled':   return Colors.red;
-      default:            return Colors.grey;
+      case 'pending':
+        return Colors.orange;
+      case 'in_progress':
+        return Colors.blue;
+      case 'done':
+        return Colors.green;
+      case 'cancelled':
+        return Colors.red;
+      default:
+        return Colors.grey;
     }
   }
 
   // แปลง urgency enum DB → ภาษาไทย
   String _urgencyLabel(String? urgency) {
     switch (urgency) {
-      case 'low':    return 'ปกติ';
-      case 'medium': return 'ด่วน';
-      case 'high':   return 'ด่วนมาก';
-      default:       return urgency ?? '-';
+      case 'low':
+        return 'ปกติ';
+      case 'medium':
+        return 'ด่วน';
+      case 'high':
+        return 'ด่วนมาก';
+      default:
+        return urgency ?? '-';
     }
   }
 
@@ -252,9 +266,9 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
                             Row(
                               children: [
                                 Text(
-                                  status ?? '-',
+                                  _statusLabel(status),
                                   style: TextStyle(
-                                    color: _userStatusColor(status),
+                                    color: _statusColor(status),
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -265,7 +279,7 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
                                   width: 10,
                                   height: 10,
                                   decoration: BoxDecoration(
-                                    color: _userStatusColor(status),
+                                    color: _statusColor(status),
                                     shape: BoxShape.circle,
                                   ),
                                 ),
