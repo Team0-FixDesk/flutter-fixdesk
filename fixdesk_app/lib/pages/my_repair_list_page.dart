@@ -54,18 +54,34 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
     }
   }
 
-  Color _userStatusColor(String? status) {
+  // แปลง enum DB → ภาษาไทย
+  String _statusLabel(String? status) {
     switch (status) {
-      case 'เสร็จสิ้น':
-        return Colors.green;
-      case 'รอดำเนินการ':
-        return Colors.orange;
-      case 'กำลังดำเนินการ':
-        return Colors.blue;
-      case 'ยกเลิก':
-        return Colors.red;
-      default:
-        return Colors.grey;
+      case 'pending':      return 'รอดำเนินการ';
+      case 'in_progress':  return 'กำลังดำเนินการ';
+      case 'done':         return 'เสร็จสิ้น';
+      case 'cancelled':    return 'ยกเลิก';
+      default:             return status ?? '-';
+    }
+  }
+
+  Color _statusColor(String? status) {
+    switch (status) {
+      case 'pending':     return Colors.orange;
+      case 'in_progress': return Colors.blue;
+      case 'done':        return Colors.green;
+      case 'cancelled':   return Colors.red;
+      default:            return Colors.grey;
+    }
+  }
+
+  // แปลง urgency enum DB → ภาษาไทย
+  String _urgencyLabel(String? urgency) {
+    switch (urgency) {
+      case 'low':    return 'ปกติ';
+      case 'medium': return 'ด่วน';
+      case 'high':   return 'ด่วนมาก';
+      default:       return urgency ?? '-';
     }
   }
 
