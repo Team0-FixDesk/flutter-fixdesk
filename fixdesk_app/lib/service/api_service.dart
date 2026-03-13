@@ -29,21 +29,6 @@ class ApiService {
   }
 
   /// ดึงรายการแจ้งซ่อมของ user
-  // static Future<List<dynamic>> getMyRepairs(int userId) async {
-  //   final data = await Supabase.instance.client
-  //       .from('repair_form')
-  //       .select(
-  //         'rf_id, rf_code, rf_phone, rf_prop_number, rf_problem, '
-  //         'rf_detail, rf_user_status, rf_urgency, '
-  //         'rf_create_at, rf_update_at',
-  //       )
-  //       .eq('rf_us_id', userId)
-  //       .order('rf_create_at', ascending: false)
-  //       .limit(30);
-
-  //   return data;
-  // }
-
   static Future<List<dynamic>> getMyRepairs(int userId) async {
     final data = await Supabase.instance.client
         .from('repair_form')
