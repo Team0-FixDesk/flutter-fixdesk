@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../service/api_service.dart';
-import 'home_page.dart';
+import '../user/user_home_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
