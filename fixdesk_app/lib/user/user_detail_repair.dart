@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 
 class UserDetailRepairPage extends StatelessWidget {
   final Map<String, dynamic> repair;
+  final int currentTabIndex;
 
-  const UserDetailRepairPage({super.key, required this.repair});
+  const UserDetailRepairPage({
+    super.key,
+    required this.repair,
+    this.currentTabIndex = 1,
+  });
 
   String statusLabel(String? status) {
     switch (status) {
@@ -358,25 +363,22 @@ class UserDetailRepairPage extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: IgnorePointer(
-        child: BottomNavigationBar(
-          currentIndex: 1,
-          onTap: (_) {},
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.grid_view),
-              label: 'หน้าแรก',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.list_alt),
-              label: 'รายการ',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              label: 'โปรไฟล์',
-            ),
-          ],
-        ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: currentTabIndex,
+        onTap: (index) {
+          Navigator.of(context).pop(index);
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.grid_view),
+            label: 'หน้าแรก',
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'รายการ'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            label: 'โปรไฟล์',
+          ),
+        ],
       ),
     );
   }
@@ -508,7 +510,7 @@ class _TimelineStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 78,
+      width: 92,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -522,13 +524,17 @@ class _TimelineStep extends StatelessWidget {
             child: Icon(icon, size: 18, color: iconColor),
           ),
           const SizedBox(height: 10),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: textColor,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
             ),
           ),
         ],

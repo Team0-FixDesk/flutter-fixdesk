@@ -131,7 +131,14 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final pages = [
       dashboard(),
-      MyRepairListPage(userData: widget.userData),
+      MyRepairListPage(
+        userData: widget.userData,
+        onTabSelected: (index) {
+          setState(() {
+            currentIndex = index;
+          });
+        },
+      ),
       ProfilePage(userData: widget.userData),
     ];
 
@@ -333,6 +340,7 @@ class _HomePageState extends State<HomePage> {
                         return RepairItem(
                           repair: repair,
                           code: repair['rf_code'] ?? '',
+                          currentTabIndex: currentIndex,
 
                           /// ดึงจาก "หัวข้อเรื่อง"
                           title: repair['rf_problem'] ?? '-',
@@ -415,6 +423,7 @@ class RepairItem extends StatelessWidget {
   final String priority;
   final String status;
   final Color color;
+  final int currentTabIndex;
 
   const RepairItem({
     super.key,
@@ -425,6 +434,7 @@ class RepairItem extends StatelessWidget {
     required this.priority,
     required this.status,
     required this.color,
+    required this.currentTabIndex,
   });
 
   Color get priorityColor {
@@ -546,13 +556,28 @@ class RepairItem extends StatelessWidget {
 
               InkWell(
                 borderRadius: BorderRadius.circular(10),
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  final selectedTab = await Navigator.push<int>(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => UserDetailRepairPage(repair: repair),
+                      builder: (_) => UserDetailRepairPage(
+                        repair: repair,
+                        currentTabIndex: currentTabIndex,
+                      ),
                     ),
                   );
+
+                  if (!context.mounted || selectedTab == null) {
+                    return;
+                  }
+
+                  final state = context
+                      .findAncestorStateOfType<_HomePageState>();
+                  if (state != null) {
+                    state.setState(() {
+                      state.currentIndex = selectedTab;
+                    });
+                  }
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
