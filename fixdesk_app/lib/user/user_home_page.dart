@@ -330,25 +330,27 @@ class _HomePageState extends State<HomePage> {
                       itemBuilder: (context, index) {
                         final repair = repairs[index];
 
+                        final room = repair['room'];
+                        final floor = room?['floor'];
+                        final building = floor?['building'];
+
                         return RepairItem(
                           repair: repair,
                           code: repair['rf_code'] ?? '',
 
-                          /// ดึงจาก "หัวข้อเรื่อง"
                           title: repair['rf_problem'] ?? '-',
 
-                          /// ดึงจาก "สถานที่"
                           location:
-                              "${repair['room_name'] ?? '-'}  "
-                              "ชั้น ${repair['fl_name'] ?? '-'}  "
-                              "${repair['bd_name'] ?? ''}",
+                              "${room?['room_name'] ?? '-'} "
+                              "ชั้น ${floor?['fl_name'] ?? '-'} "
+                              "${building?['bd_name'] ?? ''}",
 
-                          /// ดึงจาก "ความเร่งด่วน"
                           priority: urgencyLabel(repair['rf_urgency']),
 
                           status: _statusLabel(
                             repair['rf_user_status'] as String?,
                           ),
+
                           color: _statusColor(
                             repair['rf_user_status'] as String?,
                           ),
