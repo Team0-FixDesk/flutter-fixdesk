@@ -274,13 +274,17 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
                       final item = filteredRepairs[index];
                       final status = item['rf_user_status']?.toString();
 
+                      final room = item['room'];
+                      final floor = room?['floor'];
+                      final building = floor?['building'];
+
                       return RepairItem(
                         code: item['rf_code'] ?? '',
                         title: item['rf_problem'] ?? '-',
                         location:
-                            "${item['room_name'] ?? '-'} "
-                            "ชั้น ${item['fl_name'] ?? '-'} "
-                            "${item['bd_name'] ?? ''}",
+                            "${room?['room_name'] ?? '-'} "
+                            "ชั้น ${floor?['fl_name'] ?? '-'} "
+                            "${building?['bd_name'] ?? ''}",
                         priority: _urgencyLabel(item['rf_urgency']),
                         status: _statusLabel(status),
                         color: _statusColor(status),
