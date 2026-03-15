@@ -56,6 +56,32 @@ class ApiService {
     return data;
   }
 
+  static Future<List<dynamic>> getAllRepairs() async {
+    final data = await Supabase.instance.client
+        .from('repair_form')
+        .select('''
+        rf_id,
+        rf_code,
+        rf_problem,
+        rf_user_status,
+        rf_urgency,
+        rf_create_at,
+
+        room:rf_room_id (
+          room_name,
+          floor:room_fl_id (
+            fl_name,
+            building:fl_bd_id (
+              bd_name
+            )
+          )
+        )
+      ''')
+        .order('rf_create_at', ascending: false);
+
+    return data;
+  }
+
   /// สร้างรายการแจ้งซ่อม
   static Future<bool> createRepair({
     required String token,
@@ -96,5 +122,38 @@ class ApiService {
         .eq('room_fl_id', floorId)
         .order('room_id');
     return List<Map<String, dynamic>>.from(data);
+  }
+
+  //รับงาน
+  static Future<bool> acceptRepair(int repairId, int technicianId) async {
+    try {
+      await Supabase.instance.client
+          .from('repair_form')
+          .update({
+            'rf_user_status': 'in_progress',
+            'rf_technician_id': technicianId,
+          })
+          .eq('rf_id', repairId)
+          .eq('rf_user_status', 'pending');
+
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  //ปิดงาน
+  static Future<bool> finishRepair(int repairId) async {
+    try {
+      await Supabase.instance.client
+          .from('repair_form')
+          .update({'rf_user_status': 'done'})
+          .eq('rf_id', repairId)
+          .eq('rf_user_status', 'in_progress');
+
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 }
