@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../service/api_service.dart';
 import '../user/user_home_page.dart';
+import '../technician/tech_home_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -50,10 +51,25 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => HomePage(userData: result)),
-      );
+
+      final roleId = result['us_role_id'];
+
+      /// USER
+      if (roleId == 1) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => HomePage(userData: result)),
+        );
+      }
+      /// TECHNICIAN
+      else if (roleId == 2) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TechnicianHomePage(userData: result),
+          ),
+        );
+      }
     } on PostgrestException catch (e) {
       debugPrint('PostgrestException: ${e.code} | ${e.message}');
       setState(() {
@@ -156,7 +172,8 @@ class _LoginPageState extends State<LoginPage> {
                                   : Icons.visibility_outlined,
                             ),
                             onPressed: () => setState(
-                                () => _obscurePassword = !_obscurePassword),
+                              () => _obscurePassword = !_obscurePassword,
+                            ),
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -170,7 +187,9 @@ class _LoginPageState extends State<LoginPage> {
                       if (_errorMessage != null)
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.red.shade50,
                             borderRadius: BorderRadius.circular(8),
@@ -178,15 +197,19 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.error_outline,
-                                  color: Colors.red.shade600, size: 18),
+                              Icon(
+                                Icons.error_outline,
+                                color: Colors.red.shade600,
+                                size: 18,
+                              ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   _errorMessage!,
                                   style: TextStyle(
-                                      color: Colors.red.shade700,
-                                      fontSize: 13),
+                                    color: Colors.red.shade700,
+                                    fontSize: 13,
+                                  ),
                                 ),
                               ),
                             ],

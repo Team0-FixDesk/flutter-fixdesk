@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../technician/tech_home_page.dart';
+import '../technician/tech_repair_list_page.dart';
+import '../technician/tech_my_profile.dart';
 
 class AppHeader extends StatelessWidget {
   const AppHeader({super.key});
