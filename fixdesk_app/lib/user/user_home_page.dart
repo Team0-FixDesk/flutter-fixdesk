@@ -7,7 +7,6 @@ import 'user_detail_repair.dart';
 
 class HomePage extends StatefulWidget {
   final Map<String, dynamic> userData;
-
   const HomePage({super.key, required this.userData});
 
   @override
@@ -75,10 +74,9 @@ class _HomePageState extends State<HomePage> {
       )
       .length;
 
-  String get fullName {
+  String get firstName {
     final first = widget.userData['us_first_name_th'] ?? '';
-    final last = widget.userData['us_last_name_th'] ?? '';
-    return '$first $last';
+    return '$first';
   }
 
   String _formatDate(String? dateStr) {
@@ -239,7 +237,7 @@ class _HomePageState extends State<HomePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "สวัสดีคุณ$fullName",
+                            "สวัสดี คุณ$firstName",
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
