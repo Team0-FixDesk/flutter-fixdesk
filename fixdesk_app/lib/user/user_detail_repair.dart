@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fixdesk_app/service/api_service.dart';
 import '../widgets/AppHead.dart';
 
 class UserDetailRepairPage extends StatefulWidget {
@@ -105,6 +106,7 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
   List<String> extractImageUrls() {
     final possibleKeys = [
       'rf_images',
+      'rf_image',
       'images',
       'rf_image_urls',
       'rf_image_url',
@@ -333,10 +335,7 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
     final status = repair['rf_user_status']?.toString();
     final urgency = repair['rf_urgency']?.toString();
     final images = extractImageUrls();
-    final chipColor = urgencyColor(urgency);
-    final chipBackgroundColor = urgencyBackgroundColor(urgency);
     final statusAccentColor = statusColor(status);
-    final primaryColor = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
       backgroundColor: const Color(0xfff3f4f6),
@@ -356,7 +355,8 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
                     children: [
                       InkWell(
                         borderRadius: BorderRadius.circular(12),
-                        onTap: () => Navigator.of(context).pop(currentTabIndex),
+                        onTap: () =>
+                            Navigator.of(context).pop(widget.currentTabIndex),
                         child: const Padding(
                           padding: EdgeInsets.all(4),
                           child: Icon(

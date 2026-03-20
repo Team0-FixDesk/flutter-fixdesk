@@ -112,8 +112,6 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final firstName = widget.userData['us_first_name_th'] ?? '';
-
     return Scaffold(
       backgroundColor: const Color(0xfff3f4f6),
       body: SafeArea(
@@ -225,6 +223,7 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
                           color: _statusColor(status),
                           currentTabIndex: 1,
                           onTabSelected: widget.onTabSelected,
+                          userData: widget.userData,
                           repair: item,
                         );
                       },

@@ -18,7 +18,7 @@ class ReportRepairPage extends StatefulWidget {
 class _ReportRepairPageState extends State<ReportRepairPage> {
   final _formKey = GlobalKey<FormState>();
   final _propNumberController = TextEditingController();
-  final _problemController = TextEditingController();
+  final _detailController = TextEditingController();
   final _locationDisplayController = TextEditingController();
   final _phoneController = TextEditingController();
 
@@ -57,7 +57,7 @@ class _ReportRepairPageState extends State<ReportRepairPage> {
   @override
   void dispose() {
     _propNumberController.dispose();
-    _problemController.dispose();
+    _detailController.dispose();
     _locationDisplayController.dispose();
     _phoneController.dispose();
     super.dispose();
@@ -329,8 +329,8 @@ class _ReportRepairPageState extends State<ReportRepairPage> {
         'rf_prop_number': _propNumberController.text.trim().isEmpty
             ? null
             : _propNumberController.text.trim(),
-        'rf_problem': _problemController.text.trim(),
-        'rf_detail': null,
+        'rf_problem': _propNumberController.text.trim(),
+        'rf_detail': _detailController.text.trim(),
         'rf_room_id': _selectedRoomId,
         'rf_urgency': _selectedUrgency ?? 'low',
         'rf_user_status': 'pending',
@@ -633,7 +633,7 @@ class _ReportRepairPageState extends State<ReportRepairPage> {
                                     isRequired: true,
                                   ),
                                   TextFormField(
-                                    controller: _problemController,
+                                    controller: _detailController,
                                     maxLines: 4,
                                     decoration: _inputDecoration(
                                       hint: 'อธิบายอาการเสียเบื้องต้น...',

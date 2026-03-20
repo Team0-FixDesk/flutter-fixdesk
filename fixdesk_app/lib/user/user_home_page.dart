@@ -5,7 +5,6 @@ import '../widgets/menu_card.dart';
 import 'user_report_repair_page.dart';
 import 'user_my_repair_list_page.dart';
 import 'user_my_profile.dart';
-import 'user_detail_repair.dart';
 
 class HomePage extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -46,7 +45,7 @@ class _HomePageState extends State<HomePage> {
       if (!mounted) return;
 
       setState(() {
-        repairs = (data is List ? data : [])
+        repairs = data
             .map((e) => Map<String, dynamic>.from(e))
             .toList();
 
@@ -239,6 +238,7 @@ class _HomePageState extends State<HomePage> {
                               repair: repair,
                               code: repair['rf_code'] ?? '',
                               currentTabIndex: currentIndex,
+                              userData: widget.userData,
                               title: repair['rf_problem'] ?? '-',
                               location:
                                   "${room?['room_name'] ?? '-'} ชั้น ${floor?['fl_name'] ?? '-'} ${building?['bd_name'] ?? ''}",
