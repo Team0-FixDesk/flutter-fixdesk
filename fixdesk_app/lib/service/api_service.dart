@@ -1,6 +1,26 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ApiService {
+  static Future<bool> _tryAcceptRepairUpdate({
+    required int repairId,
+    required String technicianColumn,
+    required int technicianId,
+  }) async {
+    final updated = await Supabase.instance.client
+        .from('repair_form')
+        .update({
+          'rf_user_status': 'in_progress',
+          technicianColumn: technicianId,
+          'rf_update_at': DateTime.now().toIso8601String(),
+        })
+        .eq('rf_id', repairId)
+        .eq('rf_user_status', 'pending')
+        .select('rf_id')
+        .maybeSingle();
+
+    return updated != null;
+  }
+
   static Future<void> initSupabase() async {
     await Supabase.initialize(
       url: 'https://zokyojxouidgentyjonr.supabase.co',
@@ -234,16 +254,37 @@ class ApiService {
   //รับงาน
   static Future<bool> acceptRepair(int repairId, int technicianId) async {
     try {
-      await Supabase.instance.client
+      // Some deployments use rf_tt_id while others use rf_technician_id.
+      final columnCandidates = ['rf_tt_id', 'rf_technician_id'];
+
+      for (final column in columnCandidates) {
+        try {
+          final success = await _tryAcceptRepairUpdate(
+            repairId: repairId,
+            technicianColumn: column,
+            technicianId: technicianId,
+          );
+          if (success) {
+            return true;
+          }
+        } catch (_) {
+          // Try next candidate column.
+        }
+      }
+
+      // Final fallback: allow status update even when technician column is absent.
+      final updated = await Supabase.instance.client
           .from('repair_form')
           .update({
             'rf_user_status': 'in_progress',
-            'rf_technician_id': technicianId,
+            'rf_update_at': DateTime.now().toIso8601String(),
           })
           .eq('rf_id', repairId)
-          .eq('rf_user_status', 'pending');
+          .eq('rf_user_status', 'pending')
+          .select('rf_id')
+          .maybeSingle();
 
-      return true;
+      return updated != null;
     } catch (e) {
       return false;
     }

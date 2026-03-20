@@ -21,6 +21,12 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
   late final Map<String, dynamic> repair;
   bool isAcceptingRepair = false;
 
+  int? _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value.trim());
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -254,8 +260,8 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
       return;
     }
 
-    final repairId = repair['rf_id'];
-    if (repairId is! int) {
+    final repairId = _asInt(repair['rf_id']);
+    if (repairId == null) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('ไม่พบรหัสรายการแจ้งซ่อม')));
@@ -263,8 +269,8 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
     }
 
     final technicianId =
-        widget.userData?['us_tt_id'] ?? widget.userData?['us_id'];
-    if (currentStatus == 'pending' && technicianId is! int) {
+        _asInt(widget.userData?['us_tt_id']) ?? _asInt(widget.userData?['us_id']);
+    if (currentStatus == 'pending' && technicianId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('ไม่พบข้อมูลช่างสำหรับรับงาน')),
       );
@@ -278,7 +284,7 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
     final success = switch (targetStatus) {
       'in_progress' => await ApiService.acceptRepair(
         repairId,
-        technicianId as int,
+        technicianId!,
       ),
       'done' => await ApiService.finishRepair(repairId),
       _ => await ApiService.updateRepairStatus(
