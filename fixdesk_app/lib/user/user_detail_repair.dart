@@ -152,9 +152,13 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
   }
 
   String locationLabel() {
-    final building = (repair['bd_name'] ?? '').toString().trim();
-    final floor = (repair['fl_name'] ?? '').toString().trim();
-    final room = (repair['room_name'] ?? '').toString().trim();
+    final roomData = repair['room'];
+    final floorData = roomData is Map ? roomData['floor'] : null;
+    final buildingData = floorData is Map ? floorData['building'] : null;
+
+    final building = (buildingData is Map ? buildingData['bd_name'] ?? '' : repair['bd_name'] ?? '').toString().trim();
+    final floor = (floorData is Map ? floorData['fl_name'] ?? '' : repair['fl_name'] ?? '').toString().trim();
+    final room = (roomData is Map ? roomData['room_name'] ?? '' : repair['room_name'] ?? '').toString().trim();
 
     final parts = <String>[];
     if (building.isNotEmpty) parts.add(building);

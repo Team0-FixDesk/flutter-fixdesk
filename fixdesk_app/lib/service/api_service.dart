@@ -32,17 +32,18 @@ class ApiService {
   static Future<List<dynamic>> getMyRepairs(int userId) async {
     final data = await Supabase.instance.client
         .from('repair_form')
-        .select(
-          'rf_id, rf_code, rf_phone, rf_prop_number, rf_problem, '
-          'rf_detail, rf_user_status, rf_urgency, rf_room_id, '
-          'rf_create_at, rf_update_at',
         .select('''
         rf_id,
         rf_code,
+        rf_phone,
+        rf_prop_number,
         rf_problem,
+        rf_detail,
         rf_user_status,
         rf_urgency,
+        rf_room_id,
         rf_create_at,
+        rf_update_at,
 
         room:rf_room_id (
           room_name,
