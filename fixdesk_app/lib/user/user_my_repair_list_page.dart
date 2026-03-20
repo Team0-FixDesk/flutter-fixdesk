@@ -291,6 +291,7 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
                         color: _statusColor(status),
                         currentTabIndex: 1,
                         onTabSelected: widget.onTabSelected,
+                        userData: widget.userData,
                         repair: item,
                       );
                     },
@@ -317,6 +318,7 @@ class RepairItem extends StatelessWidget {
   final Color color;
   final int currentTabIndex;
   final ValueChanged<int>? onTabSelected;
+  final Map<String, dynamic> userData;
   final Map<String, dynamic> repair;
 
   const RepairItem({
@@ -329,6 +331,7 @@ class RepairItem extends StatelessWidget {
     required this.color,
     required this.currentTabIndex,
     this.onTabSelected,
+    required this.userData,
     required this.repair,
   });
 
@@ -451,9 +454,16 @@ class RepairItem extends StatelessWidget {
                       builder: (_) => UserDetailRepairPage(
                         repair: repair,
                         currentTabIndex: currentTabIndex,
+                        userData: userData,
                       ),
                     ),
                   );
+
+                  if (context.mounted) {
+                    final state = context
+                        .findAncestorStateOfType<_MyRepairListPageState>();
+                    await state?.fetchRepairs();
+                  }
 
                   if (selectedTab != null) {
                     onTabSelected?.call(selectedTab);

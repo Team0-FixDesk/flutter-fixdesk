@@ -140,6 +140,25 @@ class ApiService {
     }
   }
 
+  /// อัปเดตสถานะรายการแจ้งซ่อม
+  static Future<bool> updateRepairStatus({
+    required int repairId,
+    required String status,
+  }) async {
+    try {
+      await Supabase.instance.client
+          .from('repair_form')
+          .update({
+            'rf_user_status': status,
+            'rf_update_at': DateTime.now().toIso8601String(),
+          })
+          .eq('rf_id', repairId);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   /// ดึงรายการอาคารทั้งหมด
   static Future<List<Map<String, dynamic>>> getBuildings() async {
     final data = await Supabase.instance.client

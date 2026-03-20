@@ -341,6 +341,13 @@ class _HomePageState extends State<HomePage> {
                           repair: repair,
                           code: repair['rf_code'] ?? '',
                           currentTabIndex: currentIndex,
+                          userData: widget.userData,
+                          onAfterDetailClosed: loadStats,
+                          onTabSelected: (selectedTab) {
+                            setState(() {
+                              currentIndex = selectedTab;
+                            });
+                          },
 
                           /// ดึงจาก "หัวข้อเรื่อง"
                           title: repair['rf_problem'] ?? '-',
@@ -424,6 +431,9 @@ class RepairItem extends StatelessWidget {
   final String status;
   final Color color;
   final int currentTabIndex;
+  final Map<String, dynamic> userData;
+  final Future<void> Function()? onAfterDetailClosed;
+  final ValueChanged<int>? onTabSelected;
 
   const RepairItem({
     super.key,
@@ -435,6 +445,9 @@ class RepairItem extends StatelessWidget {
     required this.status,
     required this.color,
     required this.currentTabIndex,
+    required this.userData,
+    this.onAfterDetailClosed,
+    this.onTabSelected,
   });
 
   Color get priorityColor {
@@ -563,21 +576,18 @@ class RepairItem extends StatelessWidget {
                       builder: (_) => UserDetailRepairPage(
                         repair: repair,
                         currentTabIndex: currentTabIndex,
+                        userData: userData,
                       ),
                     ),
                   );
+
+                  await onAfterDetailClosed?.call();
 
                   if (!context.mounted || selectedTab == null) {
                     return;
                   }
 
-                  final state = context
-                      .findAncestorStateOfType<_HomePageState>();
-                  if (state != null) {
-                    state.setState(() {
-                      state.currentIndex = selectedTab;
-                    });
-                  }
+                  onTabSelected?.call(selectedTab);
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(

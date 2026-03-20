@@ -1,14 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:fixdesk_app/service/api_service.dart';
 
-class UserDetailRepairPage extends StatelessWidget {
+class UserDetailRepairPage extends StatefulWidget {
   final Map<String, dynamic> repair;
   final int currentTabIndex;
+  final Map<String, dynamic>? userData;
 
   const UserDetailRepairPage({
     super.key,
     required this.repair,
     this.currentTabIndex = 1,
+    this.userData,
   });
+
+  @override
+  State<UserDetailRepairPage> createState() => _UserDetailRepairPageState();
+}
+
+class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
+  late final Map<String, dynamic> repair;
+  bool isAcceptingRepair = false;
+
+  @override
+  void initState() {
+    super.initState();
+    repair = Map<String, dynamic>.from(widget.repair);
+  }
 
   String statusLabel(String? status) {
     switch (status) {
@@ -157,6 +174,110 @@ class UserDetailRepairPage extends StatelessWidget {
         return 2;
       default:
         return 0;
+    }
+  }
+
+  bool get isTechnician {
+    final rawRole =
+        widget.userData?['role'] ??
+        widget.userData?['us_role_name'] ??
+        widget.userData?['user_role'] ??
+        widget.userData?['us_role_id'];
+    if (rawRole == null) {
+      return false;
+    }
+
+    final normalizedRole = rawRole.toString().trim().toLowerCase();
+    return normalizedRole == 'technician' || normalizedRole == 'ช่าง';
+  }
+
+  bool get canAcceptRepair {
+    final status = repair['rf_user_status']?.toString();
+    return nextStatus(status) != null;
+  }
+
+  String? nextStatus(String? status) {
+    switch (status) {
+      case null:
+      case '':
+      case 'pending':
+        return 'in_progress';
+      case 'in_progress':
+        return 'done';
+      default:
+        return null;
+    }
+  }
+
+  String actionSuccessMessage(String? status) {
+    switch (status) {
+      case 'in_progress':
+        return 'เสร็จสิ้นงานเรียบร้อยแล้ว';
+      default:
+        return 'รับงานซ่อมเรียบร้อยแล้ว';
+    }
+  }
+
+  Future<void> acceptRepair() async {
+    if (!canAcceptRepair || isAcceptingRepair) {
+      return;
+    }
+
+    final currentStatus = repair['rf_user_status']?.toString();
+    final targetStatus = nextStatus(currentStatus);
+    if (targetStatus == null) {
+      return;
+    }
+
+    final repairId = repair['rf_id'];
+    if (repairId is! int) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('ไม่พบรหัสรายการแจ้งซ่อม')));
+      return;
+    }
+
+    setState(() {
+      isAcceptingRepair = true;
+    });
+
+    final success = await ApiService.updateRepairStatus(
+      repairId: repairId,
+      status: targetStatus,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      isAcceptingRepair = false;
+      if (success) {
+        repair['rf_user_status'] = targetStatus;
+      }
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? actionSuccessMessage(targetStatus)
+              : 'ไม่สามารถอัปเดตสถานะได้',
+        ),
+      ),
+    );
+  }
+
+  String technicianButtonLabel(String? status) {
+    switch (status) {
+      case 'in_progress':
+        return 'เสร็จสิ้นงาน';
+      case 'done':
+        return 'เสร็จสิ้น';
+      case 'cancelled':
+        return 'ยกเลิก';
+      default:
+        return 'รับงานซ่อม';
     }
   }
 
@@ -363,20 +484,70 @@ class UserDetailRepairPage extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: currentTabIndex,
-        onTap: (index) {
-          Navigator.of(context).pop(index);
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.grid_view),
-            label: 'หน้าแรก',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'รายการ'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'โปรไฟล์',
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isTechnician)
+            SafeArea(
+              top: false,
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: canAcceptRepair && !isAcceptingRepair
+                        ? acceptRepair
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1D4ED8),
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: const Color(0xFF93C5FD),
+                      disabledForegroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: isAcceptingRepair
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.4,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(
+                            technicianButtonLabel(status),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                  ),
+                ),
+              ),
+            ),
+          BottomNavigationBar(
+            currentIndex: widget.currentTabIndex,
+            onTap: (index) {
+              Navigator.of(context).pop(index);
+            },
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.grid_view),
+                label: 'หน้าแรก',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.list_alt),
+                label: 'รายการ',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person_outline),
+                label: 'โปรไฟล์',
+              ),
+            ],
           ),
         ],
       ),
