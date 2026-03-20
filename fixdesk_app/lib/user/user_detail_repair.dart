@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/AppHead.dart';
 
 class UserDetailRepairPage extends StatelessWidget {
   final Map<String, dynamic> repair;
@@ -175,92 +176,64 @@ class UserDetailRepairPage extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Image.asset(
-                        'assets/images/LOGO.png',
-                        width: 36,
-                        height: 36,
-                        fit: BoxFit.contain,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'FixDesk',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: primaryColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  Row(
+            Column(
+              children: [
+                /// 🔵 HEADER (โลโก้ + FixDesk)
+                const AppHeader(showGreeting: false),
+
+                /// 🔙 BACK + TITLE
+                Container(
+                  color: Colors.white,
+                  padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
+                  child: Row(
                     children: [
                       InkWell(
                         borderRadius: BorderRadius.circular(12),
-                        onTap: () => Navigator.of(context).maybePop(),
+                        onTap: () => Navigator.of(context).pop(currentTabIndex),
                         child: const Padding(
                           padding: EdgeInsets.all(4),
                           child: Icon(
                             Icons.arrow_back_ios_new_rounded,
-                            size: 22,
-                            color: Color(0xFF111827),
+                            size: 20,
                           ),
                         ),
                       ),
+
                       const SizedBox(width: 8),
+
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'รายละเอียดแจ้งซ่อม',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF111827),
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '#${repair['rf_code'] ?? '-'}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
+                        child: const Text(
+                          "รายละเอียดแจ้งซ่อม",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
+
+                      /// 🔥 ADD CHIP
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
+                          horizontal: 12,
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: chipBackgroundColor,
+                          color: urgencyBackgroundColor(urgency),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           urgencyLabel(urgency),
                           style: TextStyle(
-                            fontSize: 12,
+                            color: urgencyColor(urgency),
                             fontWeight: FontWeight.bold,
-                            color: chipColor,
+                            fontSize: 12,
                           ),
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
             Expanded(
               child: SingleChildScrollView(
@@ -277,7 +250,7 @@ class UserDetailRepairPage extends StatelessWidget {
                     const Text(
                       'ข้อมูลแจ้งซ่อม',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

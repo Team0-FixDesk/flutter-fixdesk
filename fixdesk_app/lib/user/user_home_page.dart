@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fixdesk_app/service/api_service.dart';
+import '../widgets/AppHead.dart';
+import '../widgets/menu_card.dart';
 import 'user_report_repair_page.dart';
 import 'user_my_repair_list_page.dart';
 import 'user_my_profile.dart';
@@ -33,17 +35,18 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    loadStats(); // ← ต้องเรียกตรงนี้
+    loadStats();
   }
 
   Future<void> loadStats() async {
     try {
-      final data = await ApiService.getMyRepairs(widget.userData['us_id']);
+      final data =
+          await ApiService.getMyRepairs(widget.userData['us_id'] ?? '');
 
       if (!mounted) return;
 
       setState(() {
-        repairs = (data as List)
+        repairs = (data is List ? data : [])
             .map((e) => Map<String, dynamic>.from(e))
             .toList();
 
@@ -51,60 +54,39 @@ class _HomePageState extends State<HomePage> {
       });
     } catch (e) {
       setState(() {
-        repairs = <Map<String, dynamic>>[];
+        repairs = [];
         isLoadingStats = false;
       });
     }
   }
 
-  /// ใส่ตรงนี้
   int get total => repairs.length;
+
   int get pending => repairs
-      .where(
-        (r) =>
-            r['rf_user_status'] == 'pending' ||
-            r['rf_user_status'] == 'รอดำเนินการ',
-      )
+      .where((r) =>
+          r['rf_user_status'] == 'pending' ||
+          r['rf_user_status'] == 'รอดำเนินการ')
       .length;
 
   int get done => repairs
-      .where(
-        (r) =>
-            r['rf_user_status'] == 'done' || r['rf_user_status'] == 'เสร็จสิ้น',
-      )
+      .where((r) =>
+          r['rf_user_status'] == 'done' ||
+          r['rf_user_status'] == 'เสร็จสิ้น')
       .length;
 
-  String get firstName {
-    final first = widget.userData['us_first_name_th'] ?? '';
-    return '$first';
-  }
-
-  String _formatDate(String? dateStr) {
-    if (dateStr == null) return '-';
-
-    try {
-      final dt = DateTime.parse(dateStr).toLocal();
-      return '${dt.day}/${dt.month}/${dt.year + 543} '
-          '${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
-    } catch (_) {
-      return dateStr;
-    }
-  }
+  String get firstName =>
+      widget.userData['us_first_name_th'] ?? '';
 
   String _statusLabel(String? status) {
     switch (status) {
       case 'pending':
         return 'รอดำเนินการ';
-
       case 'in_progress':
         return 'กำลังดำเนินการ';
-
       case 'done':
         return 'เสร็จสิ้น';
-
       case 'cancelled':
         return 'ยกเลิก';
-
       default:
         return status ?? '-';
     }
@@ -113,13 +95,13 @@ class _HomePageState extends State<HomePage> {
   Color _statusColor(String? status) {
     switch (status) {
       case 'pending':
-        return const Color(0xFFF59E0B); // ส้ม
+        return const Color(0xFFF59E0B);
       case 'in_progress':
-        return const Color(0xFF3B82F6); // น้ำเงิน
+        return const Color(0xFF3B82F6);
       case 'done':
-        return const Color(0xFF22C55E); // เขียว
+        return const Color(0xFF22C55E);
       case 'cancelled':
-        return const Color(0xFFEF4444); // แดง
+        return const Color(0xFFEF4444);
       default:
         return Colors.grey;
     }
@@ -132,9 +114,7 @@ class _HomePageState extends State<HomePage> {
       MyRepairListPage(
         userData: widget.userData,
         onTabSelected: (index) {
-          setState(() {
-            currentIndex = index;
-          });
+          setState(() => currentIndex = index);
         },
       ),
       ProfilePage(userData: widget.userData),
@@ -143,7 +123,6 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       body: IndexedStack(index: currentIndex, children: pages),
 
-      /// ปุ่ม +
       floatingActionButton: FloatingActionButton(
         elevation: 6,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -152,38 +131,22 @@ class _HomePageState extends State<HomePage> {
           await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => ReportRepairPage(userData: widget.userData),
+              builder: (_) =>
+                  ReportRepairPage(userData: widget.userData),
             ),
           );
-
-          loadStats(); // refresh dashboard
+          loadStats();
         },
         child: const Icon(Icons.add),
       ),
 
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
 
-      /// Bottom Navigation
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: MenuCard(
         currentIndex: currentIndex,
-
         onTap: (index) {
-          setState(() {
-            currentIndex = index;
-          });
+          setState(() => currentIndex = index);
         },
-
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.grid_view),
-            label: "หน้าแรก",
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: "รายการ"),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: "โปรไฟล์",
-          ),
-        ],
       ),
     );
   }
@@ -191,78 +154,14 @@ class _HomePageState extends State<HomePage> {
   /// DASHBOARD
   Widget dashboard() {
     return Container(
-      color: Colors.grey.shade100,
+      color: const Color(0xFFF5F5F5),
       child: SafeArea(
         child: Column(
           children: [
-            /// HEADER
-            Container(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-              color: Colors.white,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Image.asset(
-                              'assets/images/LOGO.png',
-                              width: 40,
-                              height: 40,
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-
-                          const SizedBox(width: 10),
-
-                          Text(
-                            "FixDesk",
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "สวัสดี คุณ$firstName",
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-
-                          const SizedBox(height: 4),
-
-                          const Text(
-                            "ยินดีต้อนรับสู่ FixDesk",
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+            /// ✅ แสดง greeting เฉพาะหน้านี้
+            AppHeader(
+              name: firstName,
+              showGreeting: true,
             ),
 
             const SizedBox(height: 16),
@@ -290,7 +189,7 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: StatCard(
-                      "ดำเนินการเสร็จสิ้น",
+                      "เสร็จสิ้น",
                       done.toString(),
                       Icons.check_circle,
                     ),
@@ -301,68 +200,57 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 20),
 
-            /// LIST HEADER
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "รายการล่าสุด",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ],
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "รายการล่าสุด",
+                  style: TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ),
             ),
 
             const SizedBox(height: 10),
 
-            /// LIST
             Expanded(
               child: isLoadingStats
                   ? const Center(child: CircularProgressIndicator())
                   : repairs.isEmpty
-                  ? const Center(
-                      child: Text(
-                        "ยังไม่มีรายการแจ้งซ่อม",
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    )
-                  : ListView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: repairs.length > 5 ? 5 : repairs.length,
-                      itemBuilder: (context, index) {
-                        final repair = repairs[index];
-
-                        final room = repair['room'];
-                        final floor = room?['floor'];
-                        final building = floor?['building'];
-
-                        return RepairItem(
-                          repair: repair,
-                          code: repair['rf_code'] ?? '',
-                          currentTabIndex: currentIndex,
-
-                          title: repair['rf_problem'] ?? '-',
-
-                          location:
-                              "${room?['room_name'] ?? '-'} "
-                              "ชั้น ${floor?['fl_name'] ?? '-'} "
-                              "${building?['bd_name'] ?? ''}",
-
-                          priority: urgencyLabel(repair['rf_urgency']),
-
-                          status: _statusLabel(
-                            repair['rf_user_status'] as String?,
+                      ? const Center(
+                          child: Text(
+                            "ยังไม่มีรายการแจ้งซ่อม",
+                            style: TextStyle(color: Colors.grey),
                           ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount:
+                              repairs.length > 5 ? 5 : repairs.length,
+                          itemBuilder: (context, index) {
+                            final repair = repairs[index];
 
-                          color: _statusColor(
-                            repair['rf_user_status'] as String?,
-                          ),
-                        );
-                      },
-                    ),
+                            final room = repair['room'];
+                            final floor = room?['floor'];
+                            final building = floor?['building'];
+
+                            return RepairItem(
+                              repair: repair,
+                              code: repair['rf_code'] ?? '',
+                              currentTabIndex: currentIndex,
+                              title: repair['rf_problem'] ?? '-',
+                              location:
+                                  "${room?['room_name'] ?? '-'} ชั้น ${floor?['fl_name'] ?? '-'} ${building?['bd_name'] ?? ''}",
+                              priority:
+                                  urgencyLabel(repair['rf_urgency']),
+                              status: _statusLabel(
+                                  repair['rf_user_status'] as String?),
+                              color: _statusColor(
+                                  repair['rf_user_status'] as String?),
+                            );
+                          },
+                        ),
             ),
           ],
         ),
@@ -370,7 +258,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
-
 class StatCard extends StatelessWidget {
   final String title;
   final String value;
@@ -397,206 +284,18 @@ class StatCard extends StatelessWidget {
         child: Column(
           children: [
             Icon(icon, color: Theme.of(context).colorScheme.primary),
-
             const SizedBox(height: 6),
-
             Text(title, style: const TextStyle(color: Colors.grey)),
-
             const SizedBox(height: 4),
-
             Text(
               value,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class RepairItem extends StatelessWidget {
-  final Map<String, dynamic> repair;
-  final String code;
-  final String title;
-  final String location;
-  final String priority;
-  final String status;
-  final Color color;
-  final int currentTabIndex;
-
-  const RepairItem({
-    super.key,
-    required this.repair,
-    required this.code,
-    required this.title,
-    required this.location,
-    required this.priority,
-    required this.status,
-    required this.color,
-    required this.currentTabIndex,
-  });
-
-  Color get priorityColor {
-    switch (priority) {
-      case 'เร่งด่วนมาก':
-        return const Color(0xFFF8D7DA);
-      case 'เร่งด่วน':
-        return const Color(0xFFFCE8C3);
-      default:
-        return const Color(0xFFD1F3E0);
-    }
-  }
-
-  Color get priorityTextColor {
-    switch (priority) {
-      case 'เร่งด่วนมาก':
-        return Colors.red;
-      case 'เร่งด่วน':
-        return Colors.orange;
-      default:
-        return Colors.green;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          /// CODE + PRIORITY
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "#$code",
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
-              ),
-
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: priorityColor,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  priority,
-                  style: TextStyle(
-                    color: priorityTextColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 6),
-
-          /// TITLE
-          Text(
-            title,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-
-          const SizedBox(height: 8),
-
-          /// LOCATION
-          Row(
-            children: [
-              const Icon(
-                Icons.location_on_outlined,
-                size: 16,
-                color: Colors.grey,
-              ),
-
-              const SizedBox(width: 4),
-
-              Text(location, style: const TextStyle(color: Colors.grey)),
-            ],
-          ),
-
-          const Divider(height: 20),
-
-          /// STATUS + BUTTON
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.access_time_rounded, size: 18, color: color),
-                  const SizedBox(width: 6),
-                  Text(
-                    status,
-                    style: TextStyle(
-                      color: color,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-
-              InkWell(
-                borderRadius: BorderRadius.circular(10),
-                onTap: () async {
-                  final selectedTab = await Navigator.push<int>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => UserDetailRepairPage(
-                        repair: repair,
-                        currentTabIndex: currentTabIndex,
-                      ),
-                    ),
-                  );
-
-                  if (!context.mounted || selectedTab == null) {
-                    return;
-                  }
-
-                  final state = context
-                      .findAncestorStateOfType<_HomePageState>();
-                  if (state != null) {
-                    state.setState(() {
-                      state.currentIndex = selectedTab;
-                    });
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Text(
-                    "ดูรายละเอียด",
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }

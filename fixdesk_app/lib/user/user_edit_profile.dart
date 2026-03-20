@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../component/profile_inputField.dart';
+import '../widgets/AppHead.dart';
 
 class EditProfilePage extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -148,62 +149,26 @@ class _EditProfilePageState extends State<EditProfilePage> {
           child: Column(
             children: [
               /// HEADER
+              AppHeader(name: firstName, showGreeting: false),
               Container(
-                padding: const EdgeInsets.fromLTRB(12, 20, 20, 10),
                 color: Colors.white,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back),
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                        ),
-
-                        Image.asset(
-                          'assets/images/LOGO.png',
-                          width: 40,
-                          height: 40,
-                        ),
-
-                        const SizedBox(width: 10),
-
-                        Text(
-                          "FixDesk",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                        ),
-                      ],
+                    InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => Navigator.pop(context),
+                      child: const Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(Icons.arrow_back_ios_new_rounded, size: 22),
+                      ),
                     ),
-
-                    const SizedBox(height: 12),
-
-                    Padding(
-                      padding: const EdgeInsets.only(left: 10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "สวัสดี คุณ$firstName",
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-
-                          const SizedBox(height: 4),
-
-                          const Text(
-                            "ยินดีต้อนรับสู่ FixDesk",
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ],
+                    const SizedBox(width: 8),
+                    const Text(
+                      "แก้ไขโปรไฟล์",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
