@@ -110,7 +110,6 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
 
     return Scaffold(
       body: IndexedStack(index: currentIndex, children: pages),
-
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
         type: BottomNavigationBarType.fixed,
@@ -135,7 +134,6 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
     return SafeArea(
       child: Column(
         children: [
-          /// HEADER
           Container(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
             color: Colors.white,
@@ -156,9 +154,7 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 20),
-
                 Text(
                   "สวัสดีคุณ $fullName",
                   style: const TextStyle(
@@ -166,7 +162,6 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const Text(
                   "Dashboard สำหรับช่าง",
                   style: TextStyle(color: Colors.grey),
@@ -177,45 +172,46 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
 
           const SizedBox(height: 16),
 
-          /// STAT
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: StatCard("ทั้งหมด", total.toString(), Icons.build),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: StatCard(
-                    "รอดำเนินการ",
-                    pending.toString(),
-                    Icons.access_time,
+            child: SizedBox(
+              height: 110,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: StatCard("ทั้งหมด", total.toString(), Icons.build),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: StatCard(
-                    "กำลังดำเนินการ",
-                    inProgress.toString(),
-                    Icons.handyman,
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: StatCard(
+                      "รอดำเนินการ",
+                      pending.toString(),
+                      Icons.access_time,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: StatCard(
-                    "เสร็จสิ้น",
-                    done.toString(),
-                    Icons.check_circle,
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: StatCard(
+                      "กำลังดำเนินการ",
+                      inProgress.toString(),
+                      Icons.handyman,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: StatCard(
+                      "เสร็จสิ้น",
+                      done.toString(),
+                      Icons.check_circle,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
 
           const SizedBox(height: 20),
 
-          /// LIST
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -284,8 +280,21 @@ class RepairItem extends StatelessWidget {
     this.onTabSelected,
   });
 
+  Color urgencyColor(String? urgency) {
+    switch (urgency) {
+      case 'high':
+        return Colors.red;
+      case 'medium':
+        return Colors.orange;
+      default:
+        return Colors.green;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final urgency = repair['rf_urgency'];
+
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
@@ -296,7 +305,33 @@ class RepairItem extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("#$code", style: const TextStyle(color: Colors.grey)),
+          /// 🔥 HEADER
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text("#$code", style: const TextStyle(color: Colors.grey)),
+
+              /// URGENCY
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: urgencyColor(urgency).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  priority ?? '-',
+                  style: TextStyle(
+                    color: urgencyColor(urgency),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
 
           const SizedBox(height: 6),
 
@@ -308,10 +343,19 @@ class RepairItem extends StatelessWidget {
 
           const Divider(),
 
+          /// 🔥 FOOTER
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(status, style: TextStyle(color: color)),
+              /// STATUS
+              Text(
+                status,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
 
               InkWell(
                 onTap: () async {
@@ -364,21 +408,28 @@ class StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      height: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(10),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, color: Theme.of(context).colorScheme.primary),
             const SizedBox(height: 6),
-            Text(title, style: const TextStyle(color: Colors.grey)),
+            Text(
+              title,
+              style: const TextStyle(color: Colors.grey, fontSize: 12),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+            ),
             const SizedBox(height: 4),
             Text(
               value,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ],
         ),

@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:fixdesk_app/service/api_service.dart';
 
@@ -10,11 +11,12 @@ class ReportRepairPage extends StatefulWidget {
   State<ReportRepairPage> createState() => _ReportRepairPageState();
 }
 
+
 class _ReportRepairPageState extends State<ReportRepairPage> {
   final _formKey = GlobalKey<FormState>();
-  final _problemController = TextEditingController();
-  final _detailController = TextEditingController();
   final _propNumberController = TextEditingController();
+  final _problemController = TextEditingController();
+  final _locationDisplayController = TextEditingController();
   final _phoneController = TextEditingController();
 
   List<Map<String, dynamic>> _buildings = [];
@@ -25,13 +27,16 @@ class _ReportRepairPageState extends State<ReportRepairPage> {
   int? _selectedFloorId;
   int? _selectedRoomId;
 
-  // key = ค่า enum จริงใน DB, value = ชื่อแสดงผลภาษาไทย
+  String? _selectedBuildingName;
+  String? _selectedFloorName;
+  String? _selectedRoomName;
+
   final Map<String, String> _urgencyMap = {
     'low': 'ปกติ',
     'medium': 'ด่วน',
     'high': 'ด่วนมาก',
   };
-  String _selectedUrgency = 'low'; // ส่งค่า DB จริง
+  String? _selectedUrgency;
 
   bool _isLoadingDropdowns = true;
   bool _isSubmitting = false;
@@ -45,9 +50,9 @@ class _ReportRepairPageState extends State<ReportRepairPage> {
 
   @override
   void dispose() {
-    _problemController.dispose();
-    _detailController.dispose();
     _propNumberController.dispose();
+    _problemController.dispose();
+    _locationDisplayController.dispose();
     _phoneController.dispose();
     super.dispose();
   }
@@ -64,39 +69,159 @@ class _ReportRepairPageState extends State<ReportRepairPage> {
     }
   }
 
-  Future<void> _loadFloors(int buildingId) async {
-    setState(() {
+  Future<void> _loadFloors(int buildingId, StateSetter setModalState) async {
+    setModalState(() {
       _floors = [];
       _rooms = [];
       _selectedFloorId = null;
       _selectedRoomId = null;
+      _selectedFloorName = null;
+      _selectedRoomName = null;
     });
     try {
       final floors = await ApiService.getFloors(buildingId);
-      setState(() => _floors = floors);
+      setModalState(() => _floors = floors);
     } catch (e) {
       debugPrint('Load floors error: $e');
     }
   }
 
-  Future<void> _loadRooms(int floorId) async {
-    setState(() {
+  Future<void> _loadRooms(int floorId, StateSetter setModalState) async {
+    setModalState(() {
       _rooms = [];
       _selectedRoomId = null;
+      _selectedRoomName = null;
     });
     try {
       final rooms = await ApiService.getRooms(floorId);
-      setState(() => _rooms = rooms);
+      setModalState(() => _rooms = rooms);
     } catch (e) {
       debugPrint('Load rooms error: $e');
     }
   }
 
-  /// สร้าง rf_code อัตโนมัติ (NOT NULL) เช่น RF-20260307-83421
+  void _showLocationPicker() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                top: 24,
+                left: 20,
+                right: 20,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'เลือกสถานที่',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<int>(
+                    value: _selectedBuildingId,
+                    decoration: _modalInputDecoration('เลือกอาคาร', Icons.domain),
+                    items: _buildings.map((b) {
+                      return DropdownMenuItem<int>(
+                        value: b['bd_id'] as int,
+                        child: Text(b['bd_name']?.toString() ?? '-'),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      setModalState(() {
+                        _selectedBuildingId = val;
+                        _selectedBuildingName = _buildings.firstWhere((b) => b['bd_id'] == val)['bd_name'];
+                      });
+                      if (val != null) _loadFloors(val, setModalState);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<int>(
+                    value: _selectedFloorId,
+                    decoration: _modalInputDecoration('เลือกชั้น', Icons.layers_outlined),
+                    items: _floors.map((f) {
+                      return DropdownMenuItem<int>(
+                        value: f['fl_id'] as int,
+                        child: Text(f['fl_name']?.toString() ?? '-'),
+                      );
+                    }).toList(),
+                    onChanged: _selectedBuildingId == null ? null : (val) {
+                      setModalState(() {
+                        _selectedFloorId = val;
+                        _selectedFloorName = _floors.firstWhere((f) => f['fl_id'] == val)['fl_name'];
+                      });
+                      if (val != null) _loadRooms(val, setModalState);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<int>(
+                    value: _selectedRoomId,
+                    decoration: _modalInputDecoration('เลือกห้อง', Icons.meeting_room_outlined),
+                    items: _rooms.map((r) {
+                      return DropdownMenuItem<int>(
+                        value: r['room_id'] as int,
+                        child: Text(r['room_name']?.toString() ?? '-'),
+                      );
+                    }).toList(),
+                    onChanged: _selectedFloorId == null ? null : (val) {
+                      setModalState(() {
+                        _selectedRoomId = val;
+                        _selectedRoomName = _rooms.firstWhere((r) => r['room_id'] == val)['room_name'];
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: _selectedRoomId != null
+                          ? () {
+                              setState(() {
+                                _locationDisplayController.text =
+                                    'อาคาร $_selectedBuildingName ชั้น $_selectedFloorName ห้อง $_selectedRoomName';
+                              });
+                              Navigator.pop(context);
+                            }
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2563EB),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('ยืนยัน', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  InputDecoration _modalInputDecoration(String hint, IconData icon) {
+    return InputDecoration(
+      hintText: hint,
+      prefixIcon: Icon(icon, color: Colors.grey.shade500),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    );
+  }
+
   String _generateCode() {
     final now = DateTime.now();
-    final date =
-        '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
+    final date = '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
     final rand = (now.millisecondsSinceEpoch % 100000).toString().padLeft(5, '0');
     return 'RF-$date-$rand';
   }
@@ -104,28 +229,24 @@ class _ReportRepairPageState extends State<ReportRepairPage> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedRoomId == null) {
-      _showError('กรุณาเลือกอาคาร ชั้น และห้อง');
+      _showError('กรุณาเลือกสถานที่ (อาคาร / ห้อง)');
       return;
     }
 
     setState(() => _isSubmitting = true);
 
     try {
-      final userId = widget.userData['us_id'];
+      final userId = widget.userData['us_id']; 
       final payload = {
-        'rf_code': _generateCode(),       // NOT NULL — สร้างอัตโนมัติ
+        'rf_code': _generateCode(),
         'rf_us_id': userId,
         'rf_phone': _phoneController.text.trim(),
-        'rf_prop_number': _propNumberController.text.trim().isEmpty
-            ? null
-            : _propNumberController.text.trim(),
+        'rf_prop_number': _propNumberController.text.trim().isEmpty ? null : _propNumberController.text.trim(),
         'rf_problem': _problemController.text.trim(),
-        'rf_detail': _detailController.text.trim().isEmpty
-            ? null
-            : _detailController.text.trim(),
+        'rf_detail': null,
         'rf_room_id': _selectedRoomId,
-        'rf_urgency': _selectedUrgency,   // low / medium / high
-        'rf_user_status': 'pending',      // enum: pending
+        'rf_urgency': _selectedUrgency ?? 'low',
+        'rf_user_status': 'pending',
       };
 
       final success = await ApiService.createRepair(
@@ -143,7 +264,7 @@ class _ReportRepairPageState extends State<ReportRepairPage> {
               children: [
                 Icon(Icons.check_circle, color: Colors.white),
                 SizedBox(width: 8),
-                Text('ส่งแจ้งซ่อมสำเร็จ'),
+                Text('ส่งข้อมูลแจ้งซ่อมสำเร็จ'),
               ],
             ),
             backgroundColor: Colors.green,
@@ -151,7 +272,7 @@ class _ReportRepairPageState extends State<ReportRepairPage> {
           ),
         );
       } else {
-        _showError('ส่งแจ้งซ่อมไม่สำเร็จ กรุณาลองใหม่');
+        _showError('ส่งข้อมูลแจ้งซ่อมไม่สำเร็จ กรุณาลองใหม่');
       }
     } catch (e) {
       _showError('เกิดข้อผิดพลาด: $e');
@@ -176,258 +297,241 @@ class _ReportRepairPageState extends State<ReportRepairPage> {
     );
   }
 
-  InputDecoration _inputDecoration(String label, IconData icon, {String? hint}) {
+  InputDecoration _inputDecoration({String? hint, IconData? prefixIcon, Widget? suffixIcon}) {
     return InputDecoration(
-      labelText: label,
       hintText: hint,
-      prefixIcon: Icon(icon),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+      prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: Colors.grey.shade400, size: 22) : null,
+      suffixIcon: suffixIcon,
       filled: true,
-      fillColor: Colors.grey.shade50,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade200),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.blue.shade400, width: 1.5),
+      ),
+    );
+  }
+
+  Widget _buildLabel(String text, {bool isRequired = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        children: [
+          Text(
+            text,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF334155),
+            ),
+          ),
+          if (isRequired)
+            const Text(
+              ' *',
+              style: TextStyle(color: Colors.red, fontSize: 14, fontWeight: FontWeight.bold),
+            ),
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: const Color(0xFFF8F9FA), // พื้นหลังสีเทาอ่อนตามรูป
       appBar: AppBar(
-        title: const Text('แจ้งซ่อมใหม่'),
-        backgroundColor: Colors.blue.shade700,
-        foregroundColor: Colors.white,
+        backgroundColor: const Color(0xFFF8F9FA),
         elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          'แจ้งซ่อมด่วน',
+          style: TextStyle(color: Color(0xFF0F172A), fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF475569), size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: _isLoadingDropdowns
           ? const Center(child: CircularProgressIndicator())
           : Form(
               key: _formKey,
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ---- ข้อมูลผู้แจ้ง ----
-                    _SectionHeader(label: 'ข้อมูลผู้แจ้ง', icon: Icons.person_outline),
-                    const SizedBox(height: 10),
-                    Card(
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
-                      elevation: 1,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: [
-                            TextFormField(
-                              initialValue: () {
-                                final th =
-                                    '${widget.userData['us_first_name_th'] ?? ''} ${widget.userData['us_last_name_th'] ?? ''}'
-                                        .trim();
-                                if (th.isNotEmpty) return th;
-                                return '${widget.userData['us_first_name_en'] ?? ''} ${widget.userData['us_last_name_en'] ?? ''}'
-                                    .trim();
-                              }(),
-                              readOnly: true,
-                              decoration:
-                                  _inputDecoration('ชื่อ-นามสกุล', Icons.badge_outlined),
+                    // ---- Header ----
+                    const Text(
+                      'กรอกข้อมูลการแจ้งซ่อม',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'ระบุรายละเอียดปัญหาที่พบเพื่อให้เจ้าหน้าที่เข้าดำเนินการ',
+                      style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // ---- Card 1: ข้อมูลอุปกรณ์และสถานที่ ----
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildLabel('ชื่ออุปกรณ์ / หมายเลขครุภัณฑ์', isRequired: true),
+                          TextFormField(
+                            controller: _propNumberController,
+                            decoration: _inputDecoration(
+                              hint: 'ระบุอุปกรณ์ที่ชำรุด',
+                              prefixIcon: Icons.inventory_2_outlined,
                             ),
-                            const SizedBox(height: 12),
-                            if (widget.userData['us_department'] != null)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: TextFormField(
-                                  initialValue: widget.userData['us_department'],
-                                  readOnly: true,
-                                  decoration: _inputDecoration(
-                                      'หน่วยงาน / แผนก', Icons.apartment),
+                            validator: (v) => (v == null || v.trim().isEmpty) ? 'กรุณาระบุอุปกรณ์' : null,
+                          ),
+                          const SizedBox(height: 20),
+
+                          _buildLabel('สถานที่ (อาคาร / ห้อง)', isRequired: true),
+                          TextFormField(
+                            controller: _locationDisplayController,
+                            readOnly: true,
+                            onTap: _showLocationPicker,
+                            decoration: _inputDecoration(
+                              hint: 'เช่น อาคาร A ชั้น 2 ห้อง 201',
+                              prefixIcon: Icons.location_on_outlined,
+                            ),
+                            validator: (v) => _selectedRoomId == null ? 'กรุณาเลือกสถานที่' : null,
+                          ),
+                          const SizedBox(height: 20),
+
+                          _buildLabel('ความเร่งด่วน'),
+                          DropdownButtonFormField<String>(
+                            value: _selectedUrgency,
+                            icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+                            decoration: InputDecoration(
+                              hintText: 'เลือกความเร่งด่วน',
+                              hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                              filled: true,
+                              fillColor: Colors.white,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.grey.shade200),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.grey.shade200),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.blue.shade400, width: 1.5),
+                              ),
+                            ),
+                            items: _urgencyMap.entries.map((entry) {
+                              return DropdownMenuItem<String>(
+                                value: entry.key,
+                                child: Text(entry.value, style: const TextStyle(fontSize: 14)),
+                              );
+                            }).toList(),
+                            onChanged: (val) => setState(() => _selectedUrgency = val),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // ---- Card 2: รายละเอียดปัญหา ----
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildLabel('รายละเอียดปัญหา', isRequired: true),
+                          TextFormField(
+                            controller: _problemController,
+                            maxLines: 4,
+                            decoration: _inputDecoration(
+                              hint: 'อธิบายอาการเสียเบื้องต้น...',
+                            ),
+                            validator: (v) => (v == null || v.trim().isEmpty) ? 'กรุณาระบุรายละเอียดปัญหา' : null,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // ---- Card 3: รูปภาพประกอบ ----
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildLabel('รูปภาพประกอบ'),
+                          InkWell(
+                            onTap: () {
+                              // TODO: ใส่ฟังก์ชันเลือกรูปภาพตรงนี้
+                            },
+                            child: CustomPaint(
+                              painter: _DashedRectPainter(color: const Color(0xFFCBD5E1), strokeWidth: 1.5, gap: 5.0),
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(vertical: 30),
+                                child: Column(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFEFF6FF),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(Icons.camera_alt_outlined, color: Color(0xFF2563EB), size: 28),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    const Text(
+                                      'แตะเพื่อเพิ่มรูปภาพ',
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'อัปโหลดรูปภาพ 1 รูป เพื่อความชัดเจน',
+                                      style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            TextFormField(
-                              controller: _phoneController,
-                              keyboardType: TextInputType.phone,
-                              decoration: _inputDecoration(
-                                'เบอร์โทรติดต่อ *',
-                                Icons.phone_outlined,
-                                hint: 'กรอกเบอร์โทรติดต่อ',
-                              ),
-                              validator: (v) => (v == null || v.trim().isEmpty)
-                                  ? 'กรุณากรอกเบอร์โทร'
-                                  : null,
                             ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // ---- สถานที่ ----
-                    _SectionHeader(label: 'สถานที่', icon: Icons.location_on_outlined),
-                    const SizedBox(height: 10),
-                    Card(
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
-                      elevation: 1,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: [
-                            DropdownButtonFormField<int>(
-                              value: _selectedBuildingId,
-                              decoration: _inputDecoration('อาคาร *', Icons.domain),
-                              hint: const Text('เลือกอาคาร'),
-                              isExpanded: true,
-                              items: _buildings
-                                  .map((b) => DropdownMenuItem<int>(
-                                        value: b['bd_id'] as int,
-                                        child: Text(b['bd_name']?.toString() ?? '-'),
-                                      ))
-                                  .toList(),
-                              onChanged: (val) {
-                                setState(() => _selectedBuildingId = val);
-                                if (val != null) _loadFloors(val);
-                              },
-                              validator: (v) => v == null ? 'กรุณาเลือกอาคาร' : null,
-                            ),
-                            const SizedBox(height: 12),
-                            DropdownButtonFormField<int>(
-                              value: _selectedFloorId,
-                              decoration:
-                                  _inputDecoration('ชั้น *', Icons.stairs_outlined),
-                              hint: Text(_selectedBuildingId == null
-                                  ? 'เลือกอาคารก่อน'
-                                  : 'เลือกชั้น'),
-                              isExpanded: true,
-                              items: _floors
-                                  .map((f) => DropdownMenuItem<int>(
-                                        value: f['fl_id'] as int,
-                                        child: Text(f['fl_name']?.toString() ?? '-'),
-                                      ))
-                                  .toList(),
-                              onChanged: _selectedBuildingId == null
-                                  ? null
-                                  : (val) {
-                                      setState(() => _selectedFloorId = val);
-                                      if (val != null) _loadRooms(val);
-                                    },
-                              validator: (v) => v == null ? 'กรุณาเลือกชั้น' : null,
-                            ),
-                            const SizedBox(height: 12),
-                            DropdownButtonFormField<int>(
-                              value: _selectedRoomId,
-                              decoration: _inputDecoration(
-                                  'ห้อง *', Icons.meeting_room_outlined),
-                              hint: Text(_selectedFloorId == null
-                                  ? 'เลือกชั้นก่อน'
-                                  : 'เลือกห้อง'),
-                              isExpanded: true,
-                              items: _rooms
-                                  .map((r) => DropdownMenuItem<int>(
-                                        value: r['room_id'] as int,
-                                        child: Text(r['room_name']?.toString() ?? '-'),
-                                      ))
-                                  .toList(),
-                              onChanged: _selectedFloorId == null
-                                  ? null
-                                  : (val) => setState(() => _selectedRoomId = val),
-                              validator: (v) => v == null ? 'กรุณาเลือกห้อง' : null,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // ---- รายละเอียดปัญหา ----
-                    _SectionHeader(
-                        label: 'รายละเอียดปัญหา',
-                        icon: Icons.report_problem_outlined),
-                    const SizedBox(height: 10),
-                    Card(
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
-                      elevation: 1,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: [
-                            TextFormField(
-                              controller: _problemController,
-                              decoration: _inputDecoration(
-                                'หัวข้อปัญหา *',
-                                Icons.title,
-                                hint: 'เช่น เครื่องคอมพิวเตอร์ไม่ติด',
-                              ),
-                              validator: (v) => (v == null || v.trim().isEmpty)
-                                  ? 'กรุณากรอกหัวข้อปัญหา'
-                                  : null,
-                            ),
-                            const SizedBox(height: 12),
-                            TextFormField(
-                              controller: _detailController,
-                              maxLines: 4,
-                              decoration: _inputDecoration(
-                                'รายละเอียดเพิ่มเติม',
-                                Icons.description_outlined,
-                                hint: 'อธิบายปัญหาอย่างละเอียด (ถ้ามี)',
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            TextFormField(
-                              controller: _propNumberController,
-                              decoration: _inputDecoration(
-                                'หมายเลขครุภัณฑ์',
-                                Icons.tag,
-                                hint: 'กรอกหมายเลขครุภัณฑ์ (ถ้ามี)',
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            // Dropdown ความเร่งด่วน
-                            // value = low/medium/high (ค่า DB จริง)
-                            // แสดงผล = ปกติ/ด่วน/ด่วนมาก
-                            DropdownButtonFormField<String>(
-                              value: _selectedUrgency,
-                              decoration:
-                                  _inputDecoration('ความเร่งด่วน *', Icons.speed),
-                              isExpanded: true,
-                              items: _urgencyMap.entries.map((entry) {
-                                final dbVal = entry.key;
-                                final label = entry.value;
-                                return DropdownMenuItem<String>(
-                                  value: dbVal,
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        dbVal == 'high'
-                                            ? Icons.priority_high
-                                            : dbVal == 'medium'
-                                                ? Icons.warning_amber_outlined
-                                                : Icons.access_time,
-                                        size: 18,
-                                        color: dbVal == 'high'
-                                            ? Colors.red
-                                            : dbVal == 'medium'
-                                                ? Colors.orange
-                                                : Colors.grey,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(label),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (val) =>
-                                  setState(() => _selectedUrgency = val ?? 'low'),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
 
                     const SizedBox(height: 24),
 
+                    // ---- ปุ่ม Submit ----
                     SizedBox(
+                      width: double.infinity,
                       height: 52,
                       child: ElevatedButton.icon(
                         onPressed: _isSubmitting ? null : _submit,
@@ -435,25 +539,41 @@ class _ReportRepairPageState extends State<ReportRepairPage> {
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(
-                                    color: Colors.white, strokeWidth: 2.5),
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
                               )
-                            : const Icon(Icons.send_rounded),
+                            : const Icon(Icons.send_outlined, size: 20),
                         label: Text(
-                          _isSubmitting ? 'กำลังส่ง...' : 'ส่งแจ้งซ่อม',
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w600),
+                          _isSubmitting ? 'กำลังส่ง...' : 'ส่งข้อมูลแจ้งซ่อม',
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue.shade700,
+                          backgroundColor: const Color(0xFF2563EB), // สีน้ำเงิน
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
-                          elevation: 2,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 12),
+
+                    // ---- ปุ่ม Cancel ----
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: OutlinedButton(
+                        onPressed: _isSubmitting ? null : () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFF64748B)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          foregroundColor: const Color(0xFF475569),
+                        ),
+                        child: const Text(
+                          'ยกเลิก',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 30),
                   ],
                 ),
               ),
@@ -462,27 +582,35 @@ class _ReportRepairPageState extends State<ReportRepairPage> {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  final String label;
-  final IconData icon;
+// คลาสสำหรับวาดเส้นประรอบกล่องอัปโหลดรูปภาพ
+class _DashedRectPainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+  final double gap;
 
-  const _SectionHeader({required this.label, required this.icon});
+  _DashedRectPainter({required this.color, this.strokeWidth = 1.0, this.gap = 5.0});
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: Colors.blue.shade700),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: Colors.blue.shade800,
-          ),
-        ),
-      ],
-    );
+  void paint(Canvas canvas, Size size) {
+    var paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    var path = Path()
+      ..addRRect(RRect.fromRectAndRadius(Rect.fromLTWH(0, 0, size.width, size.height), const Radius.circular(12)));
+
+    Path dashedPath = Path();
+    for (PathMetric measurePath in path.computeMetrics()) {
+      double distance = 0.0;
+      while (distance < measurePath.length) {
+        dashedPath.addPath(measurePath.extractPath(distance, distance + gap), Offset.zero);
+        distance += gap * 2;
+      }
+    }
+    canvas.drawPath(dashedPath, paint);
   }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
