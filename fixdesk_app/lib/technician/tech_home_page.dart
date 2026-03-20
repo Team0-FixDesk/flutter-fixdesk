@@ -52,8 +52,7 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
       repairs.where((r) => r['rf_user_status'] == 'pending').length;
   int get inProgress =>
       repairs.where((r) => r['rf_user_status'] == 'in_progress').length;
-  int get done =>
-      repairs.where((r) => r['rf_user_status'] == 'done').length;
+  int get done => repairs.where((r) => r['rf_user_status'] == 'done').length;
 
   String get fullName {
     return "${widget.userData['us_first_name_th']} ${widget.userData['us_last_name_th']}";
@@ -106,7 +105,6 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
 
     return Scaffold(
       body: IndexedStack(index: currentIndex, children: pages),
-
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
         type: BottomNavigationBarType.fixed,
@@ -120,14 +118,8 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
             icon: Icon(Icons.grid_view),
             label: "หน้าแรก",
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt),
-            label: "รายการ",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: "โปรไฟล์",
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: "รายการ"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "โปรไฟล์"),
         ],
       ),
     );
@@ -137,7 +129,6 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
     return SafeArea(
       child: Column(
         children: [
-          /// HEADER
           Container(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
             color: Colors.white,
@@ -158,9 +149,7 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 20),
-
                 Text(
                   "สวัสดีคุณ $fullName",
                   style: const TextStyle(
@@ -168,7 +157,6 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const Text(
                   "Dashboard สำหรับช่าง",
                   style: TextStyle(color: Colors.grey),
@@ -179,25 +167,46 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
 
           const SizedBox(height: 16),
 
-          /// STAT
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Expanded(child: StatCard("ทั้งหมด", total.toString(), Icons.build)),
-                const SizedBox(width: 8),
-                Expanded(child: StatCard("รอดำเนินการ", pending.toString(), Icons.access_time)),
-                const SizedBox(width: 8),
-                Expanded(child: StatCard("กำลังดำเนินการ", inProgress.toString(), Icons.handyman)),
-                const SizedBox(width: 8),
-                Expanded(child: StatCard("เสร็จสิ้น", done.toString(), Icons.check_circle)),
-              ],
+            child: SizedBox(
+              height: 110,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: StatCard("ทั้งหมด", total.toString(), Icons.build),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: StatCard(
+                      "รอดำเนินการ",
+                      pending.toString(),
+                      Icons.access_time,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: StatCard(
+                      "กำลังดำเนินการ",
+                      inProgress.toString(),
+                      Icons.handyman,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: StatCard(
+                      "เสร็จสิ้น",
+                      done.toString(),
+                      Icons.check_circle,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
 
           const SizedBox(height: 20),
 
-          /// LIST
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -250,8 +259,21 @@ class RepairItem extends StatelessWidget {
     required this.color,
   });
 
+  Color urgencyColor(String? urgency) {
+    switch (urgency) {
+      case 'high':
+        return Colors.red;
+      case 'medium':
+        return Colors.orange;
+      default:
+        return Colors.green;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final urgency = repair['rf_urgency'];
+
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
@@ -262,8 +284,33 @@ class RepairItem extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          /// 🔥 HEADER
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text("#$code", style: const TextStyle(color: Colors.grey)),
 
-          Text("#$code", style: const TextStyle(color: Colors.grey)),
+              /// URGENCY
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: urgencyColor(urgency).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  priority ?? '-',
+                  style: TextStyle(
+                    color: urgencyColor(urgency),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
 
           const SizedBox(height: 6),
 
@@ -275,24 +322,34 @@ class RepairItem extends StatelessWidget {
 
           const Divider(),
 
+          /// 🔥 FOOTER
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(status, style: TextStyle(color: color)),
+              /// STATUS
+              Text(
+                status,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
 
               InkWell(
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>
-                          UserDetailRepairPage(repair: repair),
+                      builder: (_) => UserDetailRepairPage(repair: repair),
                     ),
                   );
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade200,
                     borderRadius: BorderRadius.circular(10),
@@ -318,21 +375,29 @@ class StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      height: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(10),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, color: Theme.of(context).colorScheme.primary),
             const SizedBox(height: 6),
-            Text(title, style: const TextStyle(color: Colors.grey)),
+            Text(
+              title,
+              style: const TextStyle(color: Colors.grey, fontSize: 12),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+            ),
             const SizedBox(height: 4),
-            Text(value,
-                style: const TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.bold)),
+            Text(
+              value,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
           ],
         ),
       ),
