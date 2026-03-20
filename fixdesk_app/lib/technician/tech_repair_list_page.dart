@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import '../service/api_service.dart';
-import 'tech_detail_repair.dart';
+import '../user/user_detail_repair.dart';
 
 class TechRepairListPage extends StatefulWidget {
   final Map<String, dynamic> userData;
+  final ValueChanged<int>? onTabSelected;
 
-  const TechRepairListPage({super.key, required this.userData});
+  const TechRepairListPage({
+    super.key,
+    required this.userData,
+    this.onTabSelected,
+  });
 
   @override
   State<TechRepairListPage> createState() => _TechRepairListPageState();
@@ -239,6 +244,10 @@ class _TechRepairListPageState extends State<TechRepairListPage> {
                         priority: _urgencyLabel(item['rf_urgency']),
                         status: _statusLabel(status),
                         color: _statusColor(status),
+                        currentTabIndex: 1,
+                        userData: widget.userData,
+                        onAfterDetailClosed: fetchRepairs,
+                        onTabSelected: widget.onTabSelected,
                         repair: item,
                       );
                     },
@@ -263,6 +272,10 @@ class RepairItem extends StatelessWidget {
   final String priority;
   final String status;
   final Color color;
+  final int currentTabIndex;
+  final Map<String, dynamic> userData;
+  final Future<void> Function()? onAfterDetailClosed;
+  final ValueChanged<int>? onTabSelected;
   final Map<String, dynamic> repair;
 
   const RepairItem({
@@ -273,6 +286,10 @@ class RepairItem extends StatelessWidget {
     required this.priority,
     required this.status,
     required this.color,
+    required this.currentTabIndex,
+    required this.userData,
+    this.onAfterDetailClosed,
+    this.onTabSelected,
     required this.repair,
   });
 
@@ -359,13 +376,25 @@ class RepairItem extends StatelessWidget {
               ),
 
               InkWell(
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  final selectedTab = await Navigator.push<int>(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => TechDetailRepairPage(repair: repair),
+                      builder: (_) => UserDetailRepairPage(
+                        repair: repair,
+                        currentTabIndex: currentTabIndex,
+                        userData: userData,
+                      ),
                     ),
                   );
+
+                  await onAfterDetailClosed?.call();
+
+                  if (!context.mounted || selectedTab == null) {
+                    return;
+                  }
+
+                  onTabSelected?.call(selectedTab);
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(

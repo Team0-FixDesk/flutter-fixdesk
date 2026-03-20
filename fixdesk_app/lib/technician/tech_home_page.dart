@@ -31,9 +31,7 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
     if (!mounted) return;
 
     setState(() {
-      repairs = (data as List)
-          .map((e) => Map<String, dynamic>.from(e))
-          .toList();
+      repairs = data.map((e) => Map<String, dynamic>.from(e)).toList();
 
       repairs.sort((a, b) {
         final dateA =
@@ -52,8 +50,7 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
       repairs.where((r) => r['rf_user_status'] == 'pending').length;
   int get inProgress =>
       repairs.where((r) => r['rf_user_status'] == 'in_progress').length;
-  int get done =>
-      repairs.where((r) => r['rf_user_status'] == 'done').length;
+  int get done => repairs.where((r) => r['rf_user_status'] == 'done').length;
 
   String get fullName {
     return "${widget.userData['us_first_name_th']} ${widget.userData['us_last_name_th']}";
@@ -100,7 +97,14 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
   Widget build(BuildContext context) {
     final List<Widget> pages = [
       techDashboard(),
-      TechRepairListPage(userData: widget.userData),
+      TechRepairListPage(
+        userData: widget.userData,
+        onTabSelected: (index) {
+          setState(() {
+            currentIndex = index;
+          });
+        },
+      ),
       TechMyProfile(userData: widget.userData),
     ];
 
@@ -120,14 +124,8 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
             icon: Icon(Icons.grid_view),
             label: "หน้าแรก",
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt),
-            label: "รายการ",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: "โปรไฟล์",
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: "รายการ"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "โปรไฟล์"),
         ],
       ),
     );
@@ -184,13 +182,33 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                Expanded(child: StatCard("ทั้งหมด", total.toString(), Icons.build)),
+                Expanded(
+                  child: StatCard("ทั้งหมด", total.toString(), Icons.build),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: StatCard("รอดำเนินการ", pending.toString(), Icons.access_time)),
+                Expanded(
+                  child: StatCard(
+                    "รอดำเนินการ",
+                    pending.toString(),
+                    Icons.access_time,
+                  ),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: StatCard("กำลังดำเนินการ", inProgress.toString(), Icons.handyman)),
+                Expanded(
+                  child: StatCard(
+                    "กำลังดำเนินการ",
+                    inProgress.toString(),
+                    Icons.handyman,
+                  ),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: StatCard("เสร็จสิ้น", done.toString(), Icons.check_circle)),
+                Expanded(
+                  child: StatCard(
+                    "เสร็จสิ้น",
+                    done.toString(),
+                    Icons.check_circle,
+                  ),
+                ),
               ],
             ),
           ),
@@ -220,6 +238,14 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
                         priority: urgencyLabel(repair['rf_urgency']),
                         status: statusLabel(repair['rf_user_status']),
                         color: statusColor(repair['rf_user_status']),
+                        userData: widget.userData,
+                        currentTabIndex: currentIndex,
+                        onAfterDetailClosed: loadRepairs,
+                        onTabSelected: (selectedTab) {
+                          setState(() {
+                            currentIndex = selectedTab;
+                          });
+                        },
                       );
                     },
                   ),
@@ -238,6 +264,10 @@ class RepairItem extends StatelessWidget {
   final String? priority;
   final String status;
   final Color color;
+  final Map<String, dynamic> userData;
+  final int currentTabIndex;
+  final Future<void> Function()? onAfterDetailClosed;
+  final ValueChanged<int>? onTabSelected;
 
   const RepairItem({
     super.key,
@@ -248,6 +278,10 @@ class RepairItem extends StatelessWidget {
     required this.priority,
     required this.status,
     required this.color,
+    required this.userData,
+    required this.currentTabIndex,
+    this.onAfterDetailClosed,
+    this.onTabSelected,
   });
 
   @override
@@ -262,7 +296,6 @@ class RepairItem extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           Text("#$code", style: const TextStyle(color: Colors.grey)),
 
           const SizedBox(height: 6),
@@ -281,18 +314,31 @@ class RepairItem extends StatelessWidget {
               Text(status, style: TextStyle(color: color)),
 
               InkWell(
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  final selectedTab = await Navigator.push<int>(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>
-                          UserDetailRepairPage(repair: repair),
+                      builder: (_) => UserDetailRepairPage(
+                        repair: repair,
+                        currentTabIndex: currentTabIndex,
+                        userData: userData,
+                      ),
                     ),
                   );
+
+                  await onAfterDetailClosed?.call();
+
+                  if (!context.mounted || selectedTab == null) {
+                    return;
+                  }
+
+                  onTabSelected?.call(selectedTab);
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade200,
                     borderRadius: BorderRadius.circular(10),
@@ -330,9 +376,10 @@ class StatCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(title, style: const TextStyle(color: Colors.grey)),
             const SizedBox(height: 4),
-            Text(value,
-                style: const TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.bold)),
+            Text(
+              value,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
           ],
         ),
       ),

@@ -156,9 +156,24 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
     final floorData = roomData is Map ? roomData['floor'] : null;
     final buildingData = floorData is Map ? floorData['building'] : null;
 
-    final building = (buildingData is Map ? buildingData['bd_name'] ?? '' : repair['bd_name'] ?? '').toString().trim();
-    final floor = (floorData is Map ? floorData['fl_name'] ?? '' : repair['fl_name'] ?? '').toString().trim();
-    final room = (roomData is Map ? roomData['room_name'] ?? '' : repair['room_name'] ?? '').toString().trim();
+    final building =
+        (buildingData is Map
+                ? buildingData['bd_name'] ?? ''
+                : repair['bd_name'] ?? '')
+            .toString()
+            .trim();
+    final floor =
+        (floorData is Map
+                ? floorData['fl_name'] ?? ''
+                : repair['fl_name'] ?? '')
+            .toString()
+            .trim();
+    final room =
+        (roomData is Map
+                ? roomData['room_name'] ?? ''
+                : repair['room_name'] ?? '')
+            .toString()
+            .trim();
 
     final parts = <String>[];
     if (building.isNotEmpty) parts.add(building);
@@ -182,11 +197,15 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
   }
 
   bool get isTechnician {
+    final roleId = widget.userData?['us_role_id'];
+    if (roleId == 2 || roleId == '2') {
+      return true;
+    }
+
     final rawRole =
         widget.userData?['role'] ??
         widget.userData?['us_role_name'] ??
-        widget.userData?['user_role'] ??
-        widget.userData?['us_role_id'];
+        widget.userData?['user_role'];
     if (rawRole == null) {
       return false;
     }
@@ -216,9 +235,11 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
   String actionSuccessMessage(String? status) {
     switch (status) {
       case 'in_progress':
+        return 'รับงานซ่อมเรียบร้อยแล้ว';
+      case 'done':
         return 'เสร็จสิ้นงานเรียบร้อยแล้ว';
       default:
-        return 'รับงานซ่อมเรียบร้อยแล้ว';
+        return 'อัปเดตสถานะเรียบร้อยแล้ว';
     }
   }
 
@@ -241,14 +262,30 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
       return;
     }
 
+    final technicianId =
+        widget.userData?['us_tt_id'] ?? widget.userData?['us_id'];
+    if (currentStatus == 'pending' && technicianId is! int) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ไม่พบข้อมูลช่างสำหรับรับงาน')),
+      );
+      return;
+    }
+
     setState(() {
       isAcceptingRepair = true;
     });
 
-    final success = await ApiService.updateRepairStatus(
-      repairId: repairId,
-      status: targetStatus,
-    );
+    final success = switch (targetStatus) {
+      'in_progress' => await ApiService.acceptRepair(
+        repairId,
+        technicianId as int,
+      ),
+      'done' => await ApiService.finishRepair(repairId),
+      _ => await ApiService.updateRepairStatus(
+        repairId: repairId,
+        status: targetStatus,
+      ),
+    };
 
     if (!mounted) {
       return;
@@ -413,7 +450,7 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
                         borderRadius: BorderRadius.circular(18),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -460,7 +497,7 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
                           borderRadius: BorderRadius.circular(18),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -589,7 +626,7 @@ class _StatusCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
