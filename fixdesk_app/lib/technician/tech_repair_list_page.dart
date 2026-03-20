@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:fixdesk_app/service/api_service.dart';
-import 'user_detail_repair.dart';
+import '../service/api_service.dart';
+import 'tech_detail_repair.dart';
 
-class MyRepairListPage extends StatefulWidget {
+class TechRepairListPage extends StatefulWidget {
   final Map<String, dynamic> userData;
 
-  const MyRepairListPage({super.key, required this.userData});
+  const TechRepairListPage({super.key, required this.userData});
 
   @override
-  State<MyRepairListPage> createState() => _MyRepairListPageState();
+  State<TechRepairListPage> createState() => _TechRepairListPageState();
 }
 
-class _MyRepairListPageState extends State<MyRepairListPage> {
+class _TechRepairListPageState extends State<TechRepairListPage> {
   List<dynamic> repairs = [];
   List<dynamic> filteredRepairs = [];
 
@@ -46,8 +46,7 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
 
   Future<void> fetchRepairs() async {
     try {
-      final userId = widget.userData['us_id'];
-      final data = await ApiService.getMyRepairs(userId);
+      final data = await ApiService.getAllRepairs();
 
       setState(() {
         repairs = data;
@@ -63,7 +62,6 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
     }
   }
 
-  // แปลง enum DB → ภาษาไทย
   String _statusLabel(String? status) {
     switch (status) {
       case 'pending':
@@ -94,7 +92,6 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
     }
   }
 
-  // แปลง urgency enum DB → ภาษาไทย
   String _urgencyLabel(String? urgency) {
     switch (urgency) {
       case 'high':
@@ -103,16 +100,6 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
         return 'เร่งด่วน';
       default:
         return 'ปกติ';
-    }
-  }
-
-  String _formatDate(String? dateStr) {
-    if (dateStr == null) return '-';
-    try {
-      final dt = DateTime.parse(dateStr).toLocal();
-      return '${dt.day}/${dt.month}/${dt.year + 543}';
-    } catch (_) {
-      return dateStr;
     }
   }
 
@@ -132,34 +119,16 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
               children: [
                 /// FIXDESK BAR
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Image.asset(
-                            'assets/images/LOGO.png',
-                            width: 40,
-                            height: 40,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-
-                        const SizedBox(width: 10),
-
-                        Text(
-                          "FixDesk",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                        ),
-                      ],
+                    Image.asset('assets/images/LOGO.png', width: 40),
+                    const SizedBox(width: 10),
+                    Text(
+                      "FixDesk",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                   ],
                 ),
@@ -168,16 +137,15 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
 
                 /// TITLE
                 const Text(
-                  "รายการแจ้งซ่อมของฉัน",
+                  "รายการงานซ่อม",
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
 
                 const SizedBox(height: 12),
 
-                /// SEARCH
+                /// SEARCH + FILTER
                 Row(
                   children: [
-                    /// SEARCH
                     Expanded(
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -190,7 +158,7 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
                           onChanged: searchRepair,
                           decoration: const InputDecoration(
                             icon: Icon(Icons.search),
-                            hintText: "ค้นหาด้วยรหัสใบแจ้งซ่อม...",
+                            hintText: "ค้นหาด้วยรหัส...",
                             border: InputBorder.none,
                           ),
                         ),
@@ -199,7 +167,6 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
 
                     const SizedBox(width: 10),
 
-                    /// STATUS FILTER
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
@@ -223,8 +190,8 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
                             child: Text('กำลังดำเนินการ'),
                           ),
                           DropdownMenuItem(
-                            value: 'ดำเนินการเสร็จสิ้น',
-                            child: Text('ดำเนินการเสร็จสิ้น'),
+                            value: 'เสร็จสิ้น',
+                            child: Text('เสร็จสิ้น'),
                           ),
                         ],
                         onChanged: (value) {
@@ -248,23 +215,9 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
                 ? const Center(child: CircularProgressIndicator())
                 : filteredRepairs.isEmpty
                 ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.inbox_outlined,
-                          size: 64,
-                          color: Colors.grey.shade400,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'ยังไม่มีรายการแจ้งซ่อม',
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      'ไม่มีงาน',
+                      style: TextStyle(color: Colors.grey.shade600),
                     ),
                   )
                 : ListView.builder(
@@ -282,9 +235,7 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
                         code: item['rf_code'] ?? '',
                         title: item['rf_problem'] ?? '-',
                         location:
-                            "${room?['room_name'] ?? '-'} "
-                            "ชั้น ${floor?['fl_name'] ?? '-'} "
-                            "${building?['bd_name'] ?? ''}",
+                            "${room?['room_name'] ?? '-'} ชั้น ${floor?['fl_name'] ?? '-'} ${building?['bd_name'] ?? ''}",
                         priority: _urgencyLabel(item['rf_urgency']),
                         status: _statusLabel(status),
                         color: _statusColor(status),
@@ -355,24 +306,15 @@ class RepairItem extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          /// TOP
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                "#$code",
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
-              ),
+              Text("#$code", style: const TextStyle(color: Colors.grey)),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
@@ -403,45 +345,25 @@ class RepairItem extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          Row(
-            children: [
-              const Icon(
-                Icons.location_on_outlined,
-                size: 16,
-                color: Colors.grey,
-              ),
-              const SizedBox(width: 4),
-              Text(location, style: const TextStyle(color: Colors.grey)),
-            ],
-          ),
+          Text(location, style: const TextStyle(color: Colors.grey)),
 
-          const Divider(height: 20),
+          const Divider(),
 
+          /// STATUS + BUTTON
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(Icons.access_time_rounded, size: 18, color: color),
-                  const SizedBox(width: 6),
-                  Text(
-                    status,
-                    style: TextStyle(
-                      color: color,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
+              Text(
+                status,
+                style: TextStyle(color: color, fontWeight: FontWeight.bold),
               ),
 
               InkWell(
-                borderRadius: BorderRadius.circular(10),
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => UserDetailRepairPage(repair: repair),
+                      builder: (_) => TechDetailRepairPage(repair: repair),
                     ),
                   );
                 },
@@ -454,10 +376,7 @@ class RepairItem extends StatelessWidget {
                     color: Colors.grey.shade200,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Text(
-                    "ดูรายละเอียด",
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
+                  child: const Text("ดูรายละเอียด"),
                 ),
               ),
             ],

@@ -1,20 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-class ApiService {
-  static Future<bool> createRepair({
-    required String token,
-    required Map<String, dynamic> payload,
-  }) async {
-    try {
-      await Supabase.instance.client.from('repair_form').insert(payload);
-      return true;
-    } catch (e) {
-      debugPrint('createRepair error: $e'); // เพิ่มบรรทัดนี้
-      return false;
-    }
-  }
 
+class ApiService {
   static Future<void> initSupabase() async {
     await Supabase.initialize(
       url: 'https://zokyojxouidgentyjonr.supabase.co',
@@ -46,41 +32,128 @@ class ApiService {
   static Future<List<dynamic>> getMyRepairs(int userId) async {
     final data = await Supabase.instance.client
         .from('repair_form')
-        .select(
-          'rf_id, rf_code, rf_phone, rf_prop_number, rf_problem, '
-          'rf_detail, rf_user_status, rf_urgency, '
-          'rf_create_at, rf_update_at',
+        .select('''
+        rf_id,
+        rf_code,
+        rf_problem,
+        rf_user_status,
+        rf_urgency,
+        rf_create_at,
+
+        room:rf_room_id (
+          room_name,
+          floor:room_fl_id (
+            fl_name,
+            building:fl_bd_id (
+              bd_name
+            )
+          )
         )
+      ''')
         .eq('rf_us_id', userId)
-        .order('rf_create_at', ascending: false)
-        .limit(30);
+        .order('rf_create_at', ascending: false);
 
     return data;
   }
 
+  static Future<List<dynamic>> getAllRepairs() async {
+    final data = await Supabase.instance.client
+        .from('repair_form')
+        .select('''
+        rf_id,
+        rf_code,
+        rf_problem,
+        rf_user_status,
+        rf_urgency,
+        rf_create_at,
+
+        room:rf_room_id (
+          room_name,
+          floor:room_fl_id (
+            fl_name,
+            building:fl_bd_id (
+              bd_name
+            )
+          )
+        )
+      ''')
+        .order('rf_create_at', ascending: false);
+
+    return data;
+  }
+
+  /// สร้างรายการแจ้งซ่อม
+  static Future<bool> createRepair({
+    required String token,
+    required Map<String, dynamic> payload,
+  }) async {
+    try {
+      await Supabase.instance.client.from('repair_form').insert(payload);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// ดึงรายการอาคารทั้งหมด
   static Future<List<Map<String, dynamic>>> getBuildings() async {
     final data = await Supabase.instance.client
         .from('building')
         .select('bd_id, bd_name')
-        .order('bd_name');
+        .order('bd_id');
     return List<Map<String, dynamic>>.from(data);
   }
 
+  /// ดึงรายการชั้นตามอาคาร
   static Future<List<Map<String, dynamic>>> getFloors(int buildingId) async {
     final data = await Supabase.instance.client
         .from('floor')
         .select('fl_id, fl_name')
         .eq('fl_bd_id', buildingId)
-        .order('fl_name');
+        .order('fl_id');
     return List<Map<String, dynamic>>.from(data);
   }
 
+  /// ดึงรายการห้องตามชั้น
   static Future<List<Map<String, dynamic>>> getRooms(int floorId) async {
     final data = await Supabase.instance.client
         .from('room')
         .select('room_id, room_name')
         .eq('room_fl_id', floorId)
-        .order('room_name');
+        .order('room_id');
     return List<Map<String, dynamic>>.from(data);
+  }
+
+  //รับงาน
+  static Future<bool> acceptRepair(int repairId, int technicianId) async {
+    try {
+      await Supabase.instance.client
+          .from('repair_form')
+          .update({
+            'rf_user_status': 'in_progress',
+            'rf_technician_id': technicianId,
+          })
+          .eq('rf_id', repairId)
+          .eq('rf_user_status', 'pending');
+
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  //ปิดงาน
+  static Future<bool> finishRepair(int repairId) async {
+    try {
+      await Supabase.instance.client
+          .from('repair_form')
+          .update({'rf_user_status': 'done'})
+          .eq('rf_id', repairId)
+          .eq('rf_user_status', 'in_progress');
+
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 }

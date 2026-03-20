@@ -3,10 +3,25 @@ import 'package:flutter/material.dart';
 class AppTheme {
   static const Color primaryColor = Color(0xFF1E48D1);
 
+  static const Color pendingColor = Color(0xFFF59E0B);
+
+  static const Color progressColor = Color(0xFF3B82F6);
+
+  static const Color doneColor = Color(0xFF22C55E);
+
+  static const Color urgentHigh = Color(0xFFF8D7DA);
+
+  static const Color urgentMedium = Color(0xFFFCE8C3);
+
+  static const Color urgentLow = Color(0xFFD1F3E0);
+
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
 
-    colorScheme: ColorScheme.fromSeed(seedColor: primaryColor),
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: primaryColor,
+      primary: primaryColor,
+    ),
 
     scaffoldBackgroundColor: const Color(0xfff3f4f6),
 
