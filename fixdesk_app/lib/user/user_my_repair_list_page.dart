@@ -4,8 +4,13 @@ import 'user_detail_repair.dart';
 
 class MyRepairListPage extends StatefulWidget {
   final Map<String, dynamic> userData;
+  final ValueChanged<int>? onTabSelected;
 
-  const MyRepairListPage({super.key, required this.userData});
+  const MyRepairListPage({
+    super.key,
+    required this.userData,
+    this.onTabSelected,
+  });
 
   @override
   State<MyRepairListPage> createState() => _MyRepairListPageState();
@@ -288,6 +293,8 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
                         priority: _urgencyLabel(item['rf_urgency']),
                         status: _statusLabel(status),
                         color: _statusColor(status),
+                        currentTabIndex: 1,
+                        onTabSelected: widget.onTabSelected,
                         repair: item,
                       );
                     },
@@ -312,6 +319,8 @@ class RepairItem extends StatelessWidget {
   final String priority;
   final String status;
   final Color color;
+  final int currentTabIndex;
+  final ValueChanged<int>? onTabSelected;
   final Map<String, dynamic> repair;
 
   const RepairItem({
@@ -322,6 +331,8 @@ class RepairItem extends StatelessWidget {
     required this.priority,
     required this.status,
     required this.color,
+    required this.currentTabIndex,
+    this.onTabSelected,
     required this.repair,
   });
 
@@ -437,13 +448,20 @@ class RepairItem extends StatelessWidget {
 
               InkWell(
                 borderRadius: BorderRadius.circular(10),
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  final selectedTab = await Navigator.push<int>(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => UserDetailRepairPage(repair: repair),
+                      builder: (_) => UserDetailRepairPage(
+                        repair: repair,
+                        currentTabIndex: currentTabIndex,
+                      ),
                     ),
                   );
+
+                  if (selectedTab != null) {
+                    onTabSelected?.call(selectedTab);
+                  }
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(

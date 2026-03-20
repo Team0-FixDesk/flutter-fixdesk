@@ -33,50 +33,51 @@ class ApiService {
     final data = await Supabase.instance.client
         .from('repair_form')
         .select('''
-        rf_id,
-        rf_code,
-        rf_problem,
-        rf_user_status,
-        rf_urgency,
-        rf_create_at,
+          rf_id,
+          rf_code,
+          rf_problem,
+          rf_user_status,
+          rf_urgency,
+          rf_create_at,
 
-        room:rf_room_id (
-          room_name,
-          floor:room_fl_id (
-            fl_name,
-            building:fl_bd_id (
-              bd_name
+          room:rf_room_id (
+            room_name,
+            floor:room_fl_id (
+              fl_name,
+              building:fl_bd_id (
+                bd_name
+              )
             )
           )
-        )
-      ''')
+        ''')
         .eq('rf_us_id', userId)
         .order('rf_create_at', ascending: false);
 
     return data;
   }
 
+  /// ดึงรายการแจ้งซ่อมทั้งหมด (ใช้ JOIN แบบเดียว)
   static Future<List<dynamic>> getAllRepairs() async {
     final data = await Supabase.instance.client
         .from('repair_form')
         .select('''
-        rf_id,
-        rf_code,
-        rf_problem,
-        rf_user_status,
-        rf_urgency,
-        rf_create_at,
+          rf_id,
+          rf_code,
+          rf_problem,
+          rf_user_status,
+          rf_urgency,
+          rf_create_at,
 
-        room:rf_room_id (
-          room_name,
-          floor:room_fl_id (
-            fl_name,
-            building:fl_bd_id (
-              bd_name
+          room:rf_room_id (
+            room_name,
+            floor:room_fl_id (
+              fl_name,
+              building:fl_bd_id (
+                bd_name
+              )
             )
           )
-        )
-      ''')
+        ''')
         .order('rf_create_at', ascending: false);
 
     return data;
@@ -124,7 +125,7 @@ class ApiService {
     return List<Map<String, dynamic>>.from(data);
   }
 
-  //รับงาน
+  /// รับงาน
   static Future<bool> acceptRepair(int repairId, int technicianId) async {
     try {
       await Supabase.instance.client
@@ -142,7 +143,7 @@ class ApiService {
     }
   }
 
-  //ปิดงาน
+  /// ปิดงาน
   static Future<bool> finishRepair(int repairId) async {
     try {
       await Supabase.instance.client
