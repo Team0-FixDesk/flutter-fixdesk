@@ -1,43 +1,55 @@
 import 'package:flutter/material.dart';
-import '../technician/tech_home_page.dart';
-import '../technician/tech_repair_list_page.dart';
-import '../technician/tech_my_profile.dart';
 
-class AppHeader extends StatelessWidget {
-  const AppHeader({super.key});
+class MenuCard extends StatelessWidget {
+  final int currentIndex;
+  final Function(int) onTap;
+
+  const MenuCard({
+    super.key,
+    required this.currentIndex,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-      color: Colors.white,
-      child: Row(
-        children: [
-
-          /// LOGO
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
-              borderRadius: BorderRadius.circular(10),
+      // เพิ่มเส้นขอบด้านบนบางๆ ให้เหมือนในรูป
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: Colors.grey.shade200, width: 1),
+        ),
+      ),
+      child: BottomNavigationBar(
+        currentIndex: currentIndex,
+        onTap: onTap,
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
+        selectedItemColor: const Color(0xFF3366FF), // สีน้ำเงินตามรูป
+        unselectedItemColor: Colors.grey.shade500,
+        selectedFontSize: 12,
+        unselectedFontSize: 12,
+        elevation: 0, // ทำให้ดูแบนราบสไตล์ Minimal
+        items: const [
+          BottomNavigationBarItem(
+            icon: Padding(
+              padding: EdgeInsets.only(bottom: 4),
+              child: Icon(Icons.grid_view_rounded), // ไอคอนหน้าแรกที่ใกล้เคียงที่สุด
             ),
-            child: const Icon(
-              Icons.build,
-              color: Colors.white,
-              size: 20,
-            ),
+            label: "หน้าแรก",
           ),
-
-          const SizedBox(width: 10),
-
-          /// TEXT FIXDESK
-          Text(
-            "FixDesk",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.primary,
+          BottomNavigationBarItem(
+            icon: Padding(
+              padding: EdgeInsets.only(bottom: 4),
+              child: Icon(Icons.list_alt_rounded), // เปลี่ยนเป็นไอคอนรายการ
             ),
+            label: "รายการ",
+          ),
+          BottomNavigationBarItem(
+            icon: Padding(
+              padding: EdgeInsets.only(bottom: 4),
+              child: Icon(Icons.person_outline_rounded), // ไอคอนโปรไฟล์แบบเส้น
+            ),
+            label: "โปรไฟล์",
           ),
         ],
       ),

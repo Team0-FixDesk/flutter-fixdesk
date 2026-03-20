@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fixdesk_app/service/api_service.dart';
+import '../widgets/AppHead.dart'; // ✅ ใช้ AppHeader
 import 'user_detail_repair.dart';
 
 class MyRepairListPage extends StatefulWidget {
@@ -68,7 +69,6 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
     }
   }
 
-  // แปลง enum DB → ภาษาไทย
   String _statusLabel(String? status) {
     switch (status) {
       case 'pending':
@@ -99,7 +99,6 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
     }
   }
 
-  // แปลง urgency enum DB → ภาษาไทย
   String _urgencyLabel(String? urgency) {
     switch (urgency) {
       case 'high':
@@ -111,196 +110,128 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
     }
   }
 
-  String _formatDate(String? dateStr) {
-    if (dateStr == null) return '-';
-    try {
-      final dt = DateTime.parse(dateStr).toLocal();
-      return '${dt.day}/${dt.month}/${dt.year + 543}';
-    } catch (_) {
-      return dateStr;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final firstName = widget.userData['us_first_name_th'] ?? '';
+
     return Scaffold(
       backgroundColor: const Color(0xfff3f4f6),
+      body: SafeArea(
+        // ✅ เพิ่มตรงนี้
+        child: Column(
+          children: [
+            /// ✅ แก้ตรงนี้ (ใช้ title แทน)
+            const AppHeader(
+              title: "รายการแจ้งซ่อมของฉัน",
+              titleSize: 18,
+               // 🔥 ปรับให้เท่าหน้าอื่น
+            ),
 
-      body: Column(
-        children: [
-          /// HEADER
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-            color: Colors.white,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                /// FIXDESK BAR
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Image.asset(
-                            'assets/images/LOGO.png',
-                            width: 40,
-                            height: 40,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-
-                        const SizedBox(width: 10),
-
-                        Text(
-                          "FixDesk",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-
-                /// TITLE
-                const Text(
-                  "รายการแจ้งซ่อมของฉัน",
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-
-                const SizedBox(height: 12),
-
-                /// SEARCH
-                Row(
-                  children: [
-                    /// SEARCH
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        decoration: BoxDecoration(
-                          color: const Color(0xfff3f4f6),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: TextField(
-                          controller: searchController,
-                          onChanged: searchRepair,
-                          decoration: const InputDecoration(
-                            icon: Icon(Icons.search),
-                            hintText: "ค้นหาด้วยรหัสใบแจ้งซ่อม...",
-                            border: InputBorder.none,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(width: 10),
-
-                    /// STATUS FILTER
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
+            /// SEARCH + FILTER
+            Container(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+              color: Colors.white,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
                       decoration: BoxDecoration(
                         color: const Color(0xfff3f4f6),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: DropdownButton<String>(
-                        value: selectedStatus,
-                        underline: const SizedBox(),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'ทั้งหมด',
-                            child: Text('สถานะ'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'รอดำเนินการ',
-                            child: Text('รอดำเนินการ'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'กำลังดำเนินการ',
-                            child: Text('กำลังดำเนินการ'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'ดำเนินการเสร็จสิ้น',
-                            child: Text('ดำเนินการเสร็จสิ้น'),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            selectedStatus = value!;
-                          });
-
-                          searchRepair(searchController.text);
-                        },
+                      child: TextField(
+                        controller: searchController,
+                        onChanged: searchRepair,
+                        decoration: const InputDecoration(
+                          icon: Icon(Icons.search),
+                          hintText: "ค้นหาด้วยรหัสใบแจ้งซ่อม...",
+                          border: InputBorder.none,
+                        ),
                       ),
                     ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+                  ),
 
-          /// LIST
-          Expanded(
-            child: isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : filteredRepairs.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.inbox_outlined,
-                          size: 64,
-                          color: Colors.grey.shade400,
+                  const SizedBox(width: 10),
+
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xfff3f4f6),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: DropdownButton<String>(
+                      value: selectedStatus,
+                      underline: const SizedBox(),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'ทั้งหมด',
+                          child: Text('สถานะ'),
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'ยังไม่มีรายการแจ้งซ่อม',
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: Colors.grey.shade600,
-                          ),
+                        DropdownMenuItem(
+                          value: 'รอดำเนินการ',
+                          child: Text('รอดำเนินการ'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'กำลังดำเนินการ',
+                          child: Text('กำลังดำเนินการ'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'เสร็จสิ้น',
+                          child: Text('เสร็จสิ้น'),
                         ),
                       ],
+                      onChanged: (value) {
+                        setState(() {
+                          selectedStatus = value!;
+                        });
+                        searchRepair(searchController.text);
+                      },
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: filteredRepairs.length,
-                    itemBuilder: (context, index) {
-                      final item = filteredRepairs[index];
-                      final status = item['rf_user_status']?.toString();
-
-                      final room = item['room'];
-                      final floor = room?['floor'];
-                      final building = floor?['building'];
-
-                      return RepairItem(
-                        code: item['rf_code'] ?? '',
-                        title: item['rf_problem'] ?? '-',
-                        location:
-                            "${room?['room_name'] ?? '-'} "
-                            "ชั้น ${floor?['fl_name'] ?? '-'} "
-                            "${building?['bd_name'] ?? ''}",
-                        priority: _urgencyLabel(item['rf_urgency']),
-                        status: _statusLabel(status),
-                        color: _statusColor(status),
-                        currentTabIndex: 1,
-                        onTabSelected: widget.onTabSelected,
-                        repair: item,
-                      );
-                    },
                   ),
-          ),
-        ],
+                ],
+              ),
+            ),
+
+            /// LIST
+            Expanded(
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : filteredRepairs.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'ยังไม่มีรายการแจ้งซ่อม',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: filteredRepairs.length,
+                      itemBuilder: (context, index) {
+                        final item = filteredRepairs[index];
+                        final status = item['rf_user_status']?.toString();
+
+                        final room = item['room'];
+                        final floor = room?['floor'];
+                        final building = floor?['building'];
+
+                        return RepairItem(
+                          code: item['rf_code'] ?? '',
+                          title: item['rf_problem'] ?? '-',
+                          location:
+                              "${room?['room_name'] ?? '-'} ชั้น ${floor?['fl_name'] ?? '-'} ${building?['bd_name'] ?? ''}",
+                          priority: _urgencyLabel(item['rf_urgency']),
+                          status: _statusLabel(status),
+                          color: _statusColor(status),
+                          currentTabIndex: 1,
+                          onTabSelected: widget.onTabSelected,
+                          repair: item,
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -439,7 +370,7 @@ class RepairItem extends StatelessWidget {
                     status,
                     style: TextStyle(
                       color: color,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),
                   ),

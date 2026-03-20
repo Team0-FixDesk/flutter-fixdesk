@@ -108,10 +108,11 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.build_circle_outlined,
-                  size: 60,
-                  color: Colors.white,
+                child: Image.asset(
+                  'assets/images/LOGO.png',
+                  width: 120,
+                  height: 120,
+                  fit: BoxFit.contain,
                 ),
               ),
               const SizedBox(height: 20),

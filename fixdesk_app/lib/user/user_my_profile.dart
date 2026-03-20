@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../component/profile_inputField.dart';
 import 'user_edit_profile.dart';
+import '../widgets/AppHead.dart';
 
 class ProfilePage extends StatelessWidget {
   final Map<String, dynamic> userData;
@@ -18,7 +19,7 @@ class ProfilePage extends StatelessWidget {
 
     if (digits.length != 10) return phone;
 
-    return '${digits.substring(0,3)}-${digits.substring(3,6)}-${digits.substring(6)}';
+    return '${digits.substring(0, 3)}-${digits.substring(3, 6)}-${digits.substring(6)}';
   }
 
   @override
@@ -28,64 +29,8 @@ class ProfilePage extends StatelessWidget {
       child: SafeArea(
         child: Column(
           children: [
-
             /// HEADER
-            Container(
-              padding: const EdgeInsets.fromLTRB(12, 20, 20, 10),
-              color: Colors.white,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-
-                  Row(
-                    children: [
-                      Image.asset(
-                        'assets/images/LOGO.png',
-                        width: 40,
-                        height: 40,
-                      ),
-
-                      const SizedBox(width: 10),
-
-                      Text(
-                        "FixDesk",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  Padding(
-                    padding: const EdgeInsets.only(left: 10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-
-                        Text(
-                          "สวัสดี คุณ$firstName",
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-
-                        const SizedBox(height: 4),
-
-                        const Text(
-                          "ยินดีต้อนรับสู่ FixDesk",
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            AppHeader(name: firstName, showGreeting: true),
 
             /// CONTENT
             Expanded(
@@ -95,7 +40,6 @@ class ProfilePage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-
                       const Text(
                         "โปรไฟล์",
                         style: TextStyle(
@@ -123,7 +67,6 @@ class ProfilePage extends StatelessWidget {
 
                         child: Column(
                           children: [
-
                             ProfileInputField(
                               label: "ชื่อผู้ใช้งาน",
                               controller: TextEditingController(text: userName),
@@ -134,7 +77,9 @@ class ProfilePage extends StatelessWidget {
 
                             ProfileInputField(
                               label: "ชื่อ",
-                              controller: TextEditingController(text: firstName),
+                              controller: TextEditingController(
+                                text: firstName,
+                              ),
                               enabled: false,
                             ),
 
