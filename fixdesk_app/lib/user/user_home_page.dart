@@ -7,7 +7,6 @@ import 'user_detail_repair.dart';
 
 class HomePage extends StatefulWidget {
   final Map<String, dynamic> userData;
-
   const HomePage({super.key, required this.userData});
 
   @override
@@ -75,10 +74,9 @@ class _HomePageState extends State<HomePage> {
       )
       .length;
 
-  String get fullName {
+  String get firstName {
     final first = widget.userData['us_first_name_th'] ?? '';
-    final last = widget.userData['us_last_name_th'] ?? '';
-    return '$first $last';
+    return '$first';
   }
 
   String _formatDate(String? dateStr) {
@@ -246,7 +244,7 @@ class _HomePageState extends State<HomePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "สวัสดีคุณ$fullName",
+                            "สวัสดี คุณ$firstName",
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -337,26 +335,28 @@ class _HomePageState extends State<HomePage> {
                       itemBuilder: (context, index) {
                         final repair = repairs[index];
 
+                        final room = repair['room'];
+                        final floor = room?['floor'];
+                        final building = floor?['building'];
+
                         return RepairItem(
                           repair: repair,
                           code: repair['rf_code'] ?? '',
                           currentTabIndex: currentIndex,
 
-                          /// ดึงจาก "หัวข้อเรื่อง"
                           title: repair['rf_problem'] ?? '-',
 
-                          /// ดึงจาก "สถานที่"
                           location:
-                              "${repair['room_name'] ?? '-'}  "
-                              "ชั้น ${repair['fl_name'] ?? '-'}  "
-                              "${repair['bd_name'] ?? ''}",
+                              "${room?['room_name'] ?? '-'} "
+                              "ชั้น ${floor?['fl_name'] ?? '-'} "
+                              "${building?['bd_name'] ?? ''}",
 
-                          /// ดึงจาก "ความเร่งด่วน"
                           priority: urgencyLabel(repair['rf_urgency']),
 
                           status: _statusLabel(
                             repair['rf_user_status'] as String?,
                           ),
+
                           color: _statusColor(
                             repair['rf_user_status'] as String?,
                           ),

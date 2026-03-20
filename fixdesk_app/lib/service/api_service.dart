@@ -36,10 +36,52 @@ class ApiService {
           'rf_id, rf_code, rf_phone, rf_prop_number, rf_problem, '
           'rf_detail, rf_user_status, rf_urgency, rf_room_id, '
           'rf_create_at, rf_update_at',
+        .select('''
+        rf_id,
+        rf_code,
+        rf_problem,
+        rf_user_status,
+        rf_urgency,
+        rf_create_at,
+
+        room:rf_room_id (
+          room_name,
+          floor:room_fl_id (
+            fl_name,
+            building:fl_bd_id (
+              bd_name
+            )
+          )
         )
+      ''')
         .eq('rf_us_id', userId)
-        .order('rf_create_at', ascending: false)
-        .limit(30);
+        .order('rf_create_at', ascending: false);
+
+    return data;
+  }
+
+  static Future<List<dynamic>> getAllRepairs() async {
+    final data = await Supabase.instance.client
+        .from('repair_form')
+        .select('''
+        rf_id,
+        rf_code,
+        rf_problem,
+        rf_user_status,
+        rf_urgency,
+        rf_create_at,
+
+        room:rf_room_id (
+          room_name,
+          floor:room_fl_id (
+            fl_name,
+            building:fl_bd_id (
+              bd_name
+            )
+          )
+        )
+      ''')
+        .order('rf_create_at', ascending: false);
 
     final repairs = List<Map<String, dynamic>>.from(data);
     final roomIds = repairs
@@ -167,5 +209,38 @@ class ApiService {
         .eq('room_fl_id', floorId)
         .order('room_id');
     return List<Map<String, dynamic>>.from(data);
+  }
+
+  //รับงาน
+  static Future<bool> acceptRepair(int repairId, int technicianId) async {
+    try {
+      await Supabase.instance.client
+          .from('repair_form')
+          .update({
+            'rf_user_status': 'in_progress',
+            'rf_technician_id': technicianId,
+          })
+          .eq('rf_id', repairId)
+          .eq('rf_user_status', 'pending');
+
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  //ปิดงาน
+  static Future<bool> finishRepair(int repairId) async {
+    try {
+      await Supabase.instance.client
+          .from('repair_form')
+          .update({'rf_user_status': 'done'})
+          .eq('rf_id', repairId)
+          .eq('rf_user_status', 'in_progress');
+
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 }
