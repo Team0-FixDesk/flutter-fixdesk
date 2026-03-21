@@ -491,7 +491,7 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
                           _DetailRow(
                             icon: Icons.inventory_2_outlined,
                             label: 'อุปกรณ์',
-                            value: repairText('rf_problem'),
+                            value: repairText('rf_prop_number'),
                           ),
                           const Divider(height: 1, color: Color(0xFFF1F5F9)),
                           _DetailRow(
