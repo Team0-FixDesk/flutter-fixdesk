@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:fixdesk_app/service/api_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/AppHead.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../login/login_page.dart';
 
 class UserDetailRepairPage extends StatefulWidget {
   final Map<String, dynamic> repair;
@@ -373,7 +375,20 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
             Column(
               children: [
                 /// 🔵 HEADER (โลโก้ + FixDesk)
-                const AppHeader(showGreeting: false),
+                AppHeader(
+                  showGreeting: true,
+                  onLogout: () async {
+                    await Supabase.instance.client.auth.signOut();
+
+                    if (!context.mounted) return;
+
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginPage()),
+                      (route) => false,
+                    );
+                  },
+                ),
 
                 /// 🔙 BACK + TITLE
                 Container(

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../component/profile_inputField.dart';
 import '../widgets/AppHead.dart';
+import '../login/login_page.dart';
 
 class EditProfilePage extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -149,7 +150,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
           child: Column(
             children: [
               /// HEADER
-              AppHeader(name: firstName, showGreeting: false),
+              AppHeader(
+                showGreeting: true,
+                onLogout: () async {
+                  await Supabase.instance.client.auth.signOut();
+
+                  if (!context.mounted) return;
+
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                    (route) => false,
+                  );
+                },
+              ),
               Container(
                 color: Colors.white,
                 padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
