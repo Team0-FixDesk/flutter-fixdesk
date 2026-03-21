@@ -454,7 +454,7 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
                           _DetailRow(
                             icon: Icons.inventory_2_outlined,
                             label: 'อุปกรณ์',
-                            value: (repair['rf_problem'] ?? '-').toString(),
+                            value: (repair['rf_prop_number'] ?? '-').toString(),
                           ),
                           const Divider(height: 1, color: Color(0xFFF1F5F9)),
                           _DetailRow(
@@ -466,7 +466,7 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
                           _DetailRow(
                             icon: Icons.description_outlined,
                             label: 'รายละเอียดอาการเสีย',
-                            value: (repair['rf_detail'] ?? '-').toString(),
+                            value: (repair['rf_problem'] ?? '-').toString(),
                             isMultiline: true,
                           ),
                         ],
