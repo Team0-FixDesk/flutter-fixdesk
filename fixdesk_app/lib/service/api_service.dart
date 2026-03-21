@@ -1,26 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ApiService {
-  static Future<bool> _tryAcceptRepairUpdate({
-    required int repairId,
-    required String technicianColumn,
-    required int technicianId,
-  }) async {
-    final updated = await Supabase.instance.client
-        .from('repair_form')
-        .update({
-          'rf_user_status': 'in_progress',
-          technicianColumn: technicianId,
-          'rf_update_at': DateTime.now().toIso8601String(),
-        })
-        .eq('rf_id', repairId)
-        .eq('rf_user_status', 'pending')
-        .select('rf_id')
-        .maybeSingle();
-
-    return updated != null;
-  }
-
   static Future<void> initSupabase() async {
     await Supabase.initialize(
       url: 'https://zokyojxouidgentyjonr.supabase.co',
@@ -53,18 +33,12 @@ class ApiService {
     final data = await Supabase.instance.client
         .from('repair_form')
         .select('''
-        rf_id,
-        rf_code,
-        rf_phone,
-        rf_prop_number,
-        rf_problem,
-        rf_detail,
-        rf_image,
-        rf_user_status,
-        rf_urgency,
-        rf_room_id,
-        rf_create_at,
-        rf_update_at,
+          rf_id,
+          rf_code,
+          rf_problem,
+          rf_user_status,
+          rf_urgency,
+          rf_create_at,
 
           room:rf_room_id (
             room_name,
@@ -90,8 +64,6 @@ class ApiService {
           rf_id,
           rf_code,
           rf_problem,
-          rf_detail,
-          rf_image,
           rf_user_status,
           rf_urgency,
           rf_create_at,
@@ -118,25 +90,6 @@ class ApiService {
   }) async {
     try {
       await Supabase.instance.client.from('repair_form').insert(payload);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  /// อัปเดตสถานะรายการแจ้งซ่อม
-  static Future<bool> updateRepairStatus({
-    required int repairId,
-    required String status,
-  }) async {
-    try {
-      await Supabase.instance.client
-          .from('repair_form')
-          .update({
-            'rf_user_status': status,
-            'rf_update_at': DateTime.now().toIso8601String(),
-          })
-          .eq('rf_id', repairId);
       return true;
     } catch (e) {
       return false;
@@ -175,37 +128,16 @@ class ApiService {
   /// รับงาน
   static Future<bool> acceptRepair(int repairId, int technicianId) async {
     try {
-      // Some deployments use rf_tt_id while others use rf_technician_id.
-      final columnCandidates = ['rf_tt_id', 'rf_technician_id'];
-
-      for (final column in columnCandidates) {
-        try {
-          final success = await _tryAcceptRepairUpdate(
-            repairId: repairId,
-            technicianColumn: column,
-            technicianId: technicianId,
-          );
-          if (success) {
-            return true;
-          }
-        } catch (_) {
-          // Try next candidate column.
-        }
-      }
-
-      // Final fallback: allow status update even when technician column is absent.
-      final updated = await Supabase.instance.client
+      await Supabase.instance.client
           .from('repair_form')
           .update({
             'rf_user_status': 'in_progress',
-            'rf_update_at': DateTime.now().toIso8601String(),
+            'rf_technician_id': technicianId,
           })
           .eq('rf_id', repairId)
-          .eq('rf_user_status', 'pending')
-          .select('rf_id')
-          .maybeSingle();
+          .eq('rf_user_status', 'pending');
 
-      return updated != null;
+      return true;
     } catch (e) {
       return false;
     }

@@ -1,40 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:fixdesk_app/service/api_service.dart';
 import '../widgets/AppHead.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../login/login_page.dart';
 
-class UserDetailRepairPage extends StatefulWidget {
+class UserDetailRepairPage extends StatelessWidget {
   final Map<String, dynamic> repair;
   final int currentTabIndex;
-  final Map<String, dynamic>? userData;
 
   const UserDetailRepairPage({
     super.key,
     required this.repair,
     this.currentTabIndex = 1,
-    this.userData,
   });
-
-  @override
-  State<UserDetailRepairPage> createState() => _UserDetailRepairPageState();
-}
-
-class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
-  late final Map<String, dynamic> repair;
-  bool isAcceptingRepair = false;
-
-  int? _asInt(dynamic value) {
-    if (value is int) return value;
-    if (value is String) return int.tryParse(value.trim());
-    return null;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    repair = Map<String, dynamic>.from(widget.repair);
-  }
 
   String statusLabel(String? status) {
     switch (status) {
@@ -108,7 +85,6 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
   List<String> extractImageUrls() {
     final possibleKeys = [
       'rf_images',
-      'rf_image',
       'images',
       'rf_image_urls',
       'rf_image_url',
@@ -162,28 +138,9 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
   }
 
   String locationLabel() {
-    final roomData = repair['room'];
-    final floorData = roomData is Map ? roomData['floor'] : null;
-    final buildingData = floorData is Map ? floorData['building'] : null;
-
-    final building =
-        (buildingData is Map
-                ? buildingData['bd_name'] ?? ''
-                : repair['bd_name'] ?? '')
-            .toString()
-            .trim();
-    final floor =
-        (floorData is Map
-                ? floorData['fl_name'] ?? ''
-                : repair['fl_name'] ?? '')
-            .toString()
-            .trim();
-    final room =
-        (roomData is Map
-                ? roomData['room_name'] ?? ''
-                : repair['room_name'] ?? '')
-            .toString()
-            .trim();
+    final building = (repair['bd_name'] ?? '').toString().trim();
+    final floor = (repair['fl_name'] ?? '').toString().trim();
+    final room = (repair['room_name'] ?? '').toString().trim();
 
     final parts = <String>[];
     if (building.isNotEmpty) parts.add(building);
@@ -206,138 +163,15 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
     }
   }
 
-  bool get isTechnician {
-    final roleId = widget.userData?['us_role_id'];
-    if (roleId == 2 || roleId == '2') {
-      return true;
-    }
-
-    final rawRole =
-        widget.userData?['role'] ??
-        widget.userData?['us_role_name'] ??
-        widget.userData?['user_role'];
-    if (rawRole == null) {
-      return false;
-    }
-
-    final normalizedRole = rawRole.toString().trim().toLowerCase();
-    return normalizedRole == 'technician' || normalizedRole == 'ช่าง';
-  }
-
-  bool get canAcceptRepair {
-    final status = repair['rf_user_status']?.toString();
-    return nextStatus(status) != null;
-  }
-
-  String? nextStatus(String? status) {
-    switch (status) {
-      case null:
-      case '':
-      case 'pending':
-        return 'in_progress';
-      case 'in_progress':
-        return 'done';
-      default:
-        return null;
-    }
-  }
-
-  String actionSuccessMessage(String? status) {
-    switch (status) {
-      case 'in_progress':
-        return 'รับงานซ่อมเรียบร้อยแล้ว';
-      case 'done':
-        return 'เสร็จสิ้นงานเรียบร้อยแล้ว';
-      default:
-        return 'อัปเดตสถานะเรียบร้อยแล้ว';
-    }
-  }
-
-  Future<void> acceptRepair() async {
-    if (!canAcceptRepair || isAcceptingRepair) {
-      return;
-    }
-
-    final currentStatus = repair['rf_user_status']?.toString();
-    final targetStatus = nextStatus(currentStatus);
-    if (targetStatus == null) {
-      return;
-    }
-
-    final repairId = _asInt(repair['rf_id']);
-    if (repairId == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('ไม่พบรหัสรายการแจ้งซ่อม')));
-      return;
-    }
-
-    final technicianId =
-        _asInt(widget.userData?['us_tt_id']) ?? _asInt(widget.userData?['us_id']);
-    if (currentStatus == 'pending' && technicianId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ไม่พบข้อมูลช่างสำหรับรับงาน')),
-      );
-      return;
-    }
-
-    setState(() {
-      isAcceptingRepair = true;
-    });
-
-    final success = switch (targetStatus) {
-      'in_progress' => await ApiService.acceptRepair(
-        repairId,
-        technicianId!,
-      ),
-      'done' => await ApiService.finishRepair(repairId),
-      _ => await ApiService.updateRepairStatus(
-        repairId: repairId,
-        status: targetStatus,
-      ),
-    };
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      isAcceptingRepair = false;
-      if (success) {
-        repair['rf_user_status'] = targetStatus;
-      }
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          success
-              ? actionSuccessMessage(targetStatus)
-              : 'ไม่สามารถอัปเดตสถานะได้',
-        ),
-      ),
-    );
-  }
-
-  String technicianButtonLabel(String? status) {
-    switch (status) {
-      case 'in_progress':
-        return 'เสร็จสิ้นงาน';
-      case 'done':
-        return 'เสร็จสิ้น';
-      case 'cancelled':
-        return 'ยกเลิก';
-      default:
-        return 'รับงานซ่อม';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final status = repair['rf_user_status']?.toString();
     final urgency = repair['rf_urgency']?.toString();
     final images = extractImageUrls();
+    final chipColor = urgencyColor(urgency);
+    final chipBackgroundColor = urgencyBackgroundColor(urgency);
     final statusAccentColor = statusColor(status);
+    final primaryColor = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
       backgroundColor: const Color(0xfff3f4f6),
@@ -370,8 +204,7 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
                     children: [
                       InkWell(
                         borderRadius: BorderRadius.circular(12),
-                        onTap: () =>
-                            Navigator.of(context).pop(widget.currentTabIndex),
+                        onTap: () => Navigator.of(context).pop(currentTabIndex),
                         child: const Padding(
                           padding: EdgeInsets.all(4),
                           child: Icon(
@@ -443,7 +276,7 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
                         borderRadius: BorderRadius.circular(18),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
+                            color: Colors.black.withOpacity(.05),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -490,7 +323,7 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
                           borderRadius: BorderRadius.circular(18),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
+                              color: Colors.black.withOpacity(.05),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -518,70 +351,20 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
           ],
         ),
       ),
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (isTechnician)
-            SafeArea(
-              top: false,
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: canAcceptRepair && !isAcceptingRepair
-                        ? acceptRepair
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1D4ED8),
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: const Color(0xFF93C5FD),
-                      disabledForegroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    child: isAcceptingRepair
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.4,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Text(
-                            technicianButtonLabel(status),
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                  ),
-                ),
-              ),
-            ),
-          BottomNavigationBar(
-            currentIndex: widget.currentTabIndex,
-            onTap: (index) {
-              Navigator.of(context).pop(index);
-            },
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.grid_view),
-                label: 'หน้าแรก',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.list_alt),
-                label: 'รายการ',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.person_outline),
-                label: 'โปรไฟล์',
-              ),
-            ],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: currentTabIndex,
+        onTap: (index) {
+          Navigator.of(context).pop(index);
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.grid_view),
+            label: 'หน้าแรก',
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'รายการ'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            label: 'โปรไฟล์',
           ),
         ],
       ),
@@ -619,7 +402,7 @@ class _StatusCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withOpacity(.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

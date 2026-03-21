@@ -34,7 +34,9 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
     if (!mounted) return;
 
     setState(() {
-      repairs = data.map((e) => Map<String, dynamic>.from(e)).toList();
+      repairs = (data as List)
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
 
       repairs.sort((a, b) {
         final dateA =
@@ -100,14 +102,7 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
   Widget build(BuildContext context) {
     final List<Widget> pages = [
       techDashboard(),
-      TechRepairListPage(
-        userData: widget.userData,
-        onTabSelected: (index) {
-          setState(() {
-            currentIndex = index;
-          });
-        },
-      ),
+      TechRepairListPage(userData: widget.userData),
       TechMyProfile(userData: widget.userData),
     ];
 
@@ -217,14 +212,6 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
                         priority: urgencyLabel(repair['rf_urgency']),
                         status: statusLabel(repair['rf_user_status']),
                         color: statusColor(repair['rf_user_status']),
-                        userData: widget.userData,
-                        currentTabIndex: currentIndex,
-                        onAfterDetailClosed: loadRepairs,
-                        onTabSelected: (selectedTab) {
-                          setState(() {
-                            currentIndex = selectedTab;
-                          });
-                        },
                       );
                     },
                   ),
@@ -243,10 +230,6 @@ class RepairItem extends StatelessWidget {
   final String? priority;
   final String status;
   final Color color;
-  final Map<String, dynamic> userData;
-  final int currentTabIndex;
-  final Future<void> Function()? onAfterDetailClosed;
-  final ValueChanged<int>? onTabSelected;
 
   const RepairItem({
     super.key,
@@ -257,10 +240,6 @@ class RepairItem extends StatelessWidget {
     required this.priority,
     required this.status,
     required this.color,
-    required this.userData,
-    required this.currentTabIndex,
-    this.onAfterDetailClosed,
-    this.onTabSelected,
   });
 
   Color urgencyColor(String? urgency) {
@@ -341,25 +320,13 @@ class RepairItem extends StatelessWidget {
               ),
 
               InkWell(
-                onTap: () async {
-                  final selectedTab = await Navigator.push<int>(
+                onTap: () {
+                  Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => UserDetailRepairPage(
-                        repair: repair,
-                        currentTabIndex: currentTabIndex,
-                        userData: userData,
-                      ),
+                      builder: (_) => UserDetailRepairPage(repair: repair),
                     ),
                   );
-
-                  await onAfterDetailClosed?.call();
-
-                  if (!context.mounted || selectedTab == null) {
-                    return;
-                  }
-
-                  onTabSelected?.call(selectedTab);
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
