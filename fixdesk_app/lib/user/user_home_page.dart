@@ -5,6 +5,9 @@ import '../widgets/menu_card.dart';
 import 'user_report_repair_page.dart';
 import 'user_my_repair_list_page.dart';
 import 'user_my_profile.dart';
+import 'user_detail_repair.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../login/login_page.dart';
 
 class HomePage extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -39,8 +42,9 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> loadStats() async {
     try {
-      final data =
-          await ApiService.getMyRepairs(widget.userData['us_id'] ?? '');
+      final data = await ApiService.getMyRepairs(
+        widget.userData['us_id'] ?? '',
+      );
 
       if (!mounted) return;
 
@@ -62,19 +66,21 @@ class _HomePageState extends State<HomePage> {
   int get total => repairs.length;
 
   int get pending => repairs
-      .where((r) =>
-          r['rf_user_status'] == 'pending' ||
-          r['rf_user_status'] == 'รอดำเนินการ')
+      .where(
+        (r) =>
+            r['rf_user_status'] == 'pending' ||
+            r['rf_user_status'] == 'รอดำเนินการ',
+      )
       .length;
 
   int get done => repairs
-      .where((r) =>
-          r['rf_user_status'] == 'done' ||
-          r['rf_user_status'] == 'เสร็จสิ้น')
+      .where(
+        (r) =>
+            r['rf_user_status'] == 'done' || r['rf_user_status'] == 'เสร็จสิ้น',
+      )
       .length;
 
-  String get firstName =>
-      widget.userData['us_first_name_th'] ?? '';
+  String get firstName => widget.userData['us_first_name_th'] ?? '';
 
   String _statusLabel(String? status) {
     switch (status) {
@@ -130,8 +136,7 @@ class _HomePageState extends State<HomePage> {
           await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) =>
-                  ReportRepairPage(userData: widget.userData),
+              builder: (_) => ReportRepairPage(userData: widget.userData),
             ),
           );
           loadStats();
@@ -161,6 +166,20 @@ class _HomePageState extends State<HomePage> {
             AppHeader(
               name: firstName,
               showGreeting: true,
+              onLogout: () async {
+                /// 🔥 1. logout supabase
+                await Supabase.instance.client.auth.signOut();
+
+                /// 🔥 2. กัน widget พัง
+                if (!context.mounted) return;
+
+                /// 🔥 3. ล้าง stack + กลับ login
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                  (route) => false,
+                );
+              },
             ),
 
             const SizedBox(height: 16),
@@ -205,8 +224,7 @@ class _HomePageState extends State<HomePage> {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   "รายการล่าสุด",
-                  style: TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -217,10 +235,32 @@ class _HomePageState extends State<HomePage> {
               child: isLoadingStats
                   ? const Center(child: CircularProgressIndicator())
                   : repairs.isEmpty
-                      ? const Center(
-                          child: Text(
-                            "ยังไม่มีรายการแจ้งซ่อม",
-                            style: TextStyle(color: Colors.grey),
+                  ? const Center(
+                      child: Text(
+                        "ยังไม่มีรายการแจ้งซ่อม",
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: repairs.length > 5 ? 5 : repairs.length,
+                      itemBuilder: (context, index) {
+                        final repair = repairs[index];
+
+                        final room = repair['room'];
+                        final floor = room?['floor'];
+                        final building = floor?['building'];
+
+                        return RepairItem(
+                          repair: repair,
+                          code: repair['rf_code'] ?? '',
+                          currentTabIndex: currentIndex,
+                          title: repair['rf_problem'] ?? '-',
+                          location:
+                              "${room?['room_name'] ?? '-'} ชั้น ${floor?['fl_name'] ?? '-'} ${building?['bd_name'] ?? ''}",
+                          priority: urgencyLabel(repair['rf_urgency']),
+                          status: _statusLabel(
+                            repair['rf_user_status'] as String?,
                           ),
                         )
                       : ListView.builder(
@@ -251,6 +291,12 @@ class _HomePageState extends State<HomePage> {
                             );
                           },
                         ),
+                          color: _statusColor(
+                            repair['rf_user_status'] as String?,
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -258,6 +304,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+
 class StatCard extends StatelessWidget {
   final String title;
   final String value;
@@ -289,10 +336,7 @@ class StatCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               value,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
           ],
         ),

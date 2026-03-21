@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../component/profile_inputField.dart';
 import 'user_edit_profile.dart';
 import '../widgets/AppHead.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../login/login_page.dart';
 
 class ProfilePage extends StatelessWidget {
   final Map<String, dynamic> userData;
@@ -30,7 +32,20 @@ class ProfilePage extends StatelessWidget {
         child: Column(
           children: [
             /// HEADER
-            AppHeader(name: firstName, showGreeting: true),
+            AppHeader(
+              showGreeting: true,
+              onLogout: () async {
+                await Supabase.instance.client.auth.signOut();
+
+                if (!context.mounted) return;
+
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                  (route) => false,
+                );
+              },
+            ),
 
             /// CONTENT
             Expanded(
