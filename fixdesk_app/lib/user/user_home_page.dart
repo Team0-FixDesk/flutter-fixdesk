@@ -252,7 +252,7 @@ class _HomePageState extends State<HomePage> {
                           code: repair['rf_code'] ?? '',
                           currentTabIndex: currentIndex,
                           userData: widget.userData,
-                          title: repair['rf_prop_number'] ?? '-',
+                          title: repair['rf_problem'] ?? '-',
                           location:
                               "${room?['room_name'] ?? '-'} ชั้น ${floor?['fl_name'] ?? '-'} ${building?['bd_name'] ?? ''}",
                           priority: urgencyLabel(repair['rf_urgency']),

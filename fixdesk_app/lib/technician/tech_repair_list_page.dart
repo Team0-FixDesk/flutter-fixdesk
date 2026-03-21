@@ -221,7 +221,7 @@ class _TechRepairListPageState extends State<TechRepairListPage> {
 
                         return RepairItem(
                           code: item['rf_code'] ?? '',
-                          title: item['rf_problem'] ?? '-',
+                          title: item['rf_prop_number'] ?? '-',
                           location:
                               "${room?['room_name'] ?? '-'} ชั้น ${floor?['fl_name'] ?? '-'} ${building?['bd_name'] ?? ''}",
                           priority: _urgencyLabel(item['rf_urgency']),
