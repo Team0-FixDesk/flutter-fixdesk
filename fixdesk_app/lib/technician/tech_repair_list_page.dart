@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../service/api_service.dart';
+import '../user/user_detail_repair.dart';
 import 'tech_detail_repair.dart';
 import '../widgets/AppHead.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -7,8 +8,13 @@ import '../login/login_page.dart';
 
 class TechRepairListPage extends StatefulWidget {
   final Map<String, dynamic> userData;
+  final ValueChanged<int>? onTabSelected;
 
-  const TechRepairListPage({super.key, required this.userData});
+  const TechRepairListPage({
+    super.key,
+    required this.userData,
+    this.onTabSelected,
+  });
 
   @override
   State<TechRepairListPage> createState() => _TechRepairListPageState();
@@ -234,6 +240,48 @@ class _TechRepairListPageState extends State<TechRepairListPage> {
                       },
                     ),
             ),
+          ),
+
+          /// LIST
+          Expanded(
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : filteredRepairs.isEmpty
+                ? Center(
+                    child: Text(
+                      'ไม่มีงาน',
+                      style: TextStyle(color: Colors.grey.shade600),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: filteredRepairs.length,
+                    itemBuilder: (context, index) {
+                      final item = filteredRepairs[index];
+                      final status = item['rf_user_status']?.toString();
+
+                      final room = item['room'];
+                      final floor = room?['floor'];
+                      final building = floor?['building'];
+
+                      return RepairItem(
+                        code: item['rf_code'] ?? '',
+                        title: item['rf_problem'] ?? '-',
+                        location:
+                            "${room?['room_name'] ?? '-'} ชั้น ${floor?['fl_name'] ?? '-'} ${building?['bd_name'] ?? ''}",
+                        priority: _urgencyLabel(item['rf_urgency']),
+                        status: _statusLabel(status),
+                        color: _statusColor(status),
+                        currentTabIndex: 1,
+                        userData: widget.userData,
+                        onAfterDetailClosed: fetchRepairs,
+                        onTabSelected: widget.onTabSelected,
+                        repair: item,
+                      );
+                    },
+                  ),
+          ),
+        ],
           ],
         ),
       ),
@@ -255,6 +303,8 @@ class RepairItem extends StatelessWidget {
   final String status;
   final Color color;
   final int currentTabIndex;
+  final Map<String, dynamic> userData;
+  final Future<void> Function()? onAfterDetailClosed;
   final ValueChanged<int>? onTabSelected;
   final Map<String, dynamic> repair;
 
@@ -267,6 +317,8 @@ class RepairItem extends StatelessWidget {
     required this.status,
     required this.color,
     required this.currentTabIndex,
+    required this.userData,
+    this.onAfterDetailClosed,
     this.onTabSelected,
     required this.repair,
   });
@@ -354,13 +406,25 @@ class RepairItem extends StatelessWidget {
               ),
 
               InkWell(
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  final selectedTab = await Navigator.push<int>(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => TechDetailRepairPage(repair: repair),
+                      builder: (_) => UserDetailRepairPage(
+                        repair: repair,
+                        currentTabIndex: currentTabIndex,
+                        userData: userData,
+                      ),
                     ),
                   );
+
+                  await onAfterDetailClosed?.call();
+
+                  if (!context.mounted || selectedTab == null) {
+                    return;
+                  }
+
+                  onTabSelected?.call(selectedTab);
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
