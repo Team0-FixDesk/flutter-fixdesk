@@ -1,5 +1,9 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:fixdesk_app/service/api_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/AppHead.dart';
 
 class UserDetailRepairPage extends StatefulWidget {
@@ -19,6 +23,8 @@ class UserDetailRepairPage extends StatefulWidget {
 }
 
 class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
+  static const String _repairImageBucket = 'repair-images';
+
   late final Map<String, dynamic> repair;
   bool isAcceptingRepair = false;
 
@@ -104,30 +110,11 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
   }
 
   List<String> extractImageUrls() {
-    final possibleKeys = [
-      'rf_images',
-      'rf_image',
-      'images',
-      'rf_image_urls',
-      'rf_image_url',
-      'rf_photo_urls',
-      'rf_photo_url',
-      'rf_photos',
-      'photo_urls',
-      'photo_url',
-      'image_urls',
-      'image_url',
-    ];
-
-    for (final key in possibleKeys) {
-      final value = repair[key];
-      final urls = _normalizeImageValue(value);
-      if (urls.isNotEmpty) {
-        return urls;
-      }
-    }
-
-    return const [];
+    final raw = repair['rf_image'];
+    debugPrint('[FixDesk] rf_image raw value: $raw (${raw.runtimeType})');
+    final urls = _normalizeImageValue(raw);
+    debugPrint('[FixDesk] resolved image URLs: $urls');
+    return urls;
   }
 
   List<String> _normalizeImageValue(dynamic value) {
@@ -137,26 +124,69 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
       final trimmed = value.trim();
       if (trimmed.isEmpty) return const [];
 
+      if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+        try {
+          final decoded = jsonDecode(trimmed);
+          return _normalizeImageValue(decoded);
+        } catch (_) {
+          // Fall through to plain string parsing.
+        }
+      }
+
       if (trimmed.contains(',')) {
         return trimmed
             .split(',')
             .map((item) => item.trim())
             .where((item) => item.isNotEmpty)
+            .map(_resolveImageSource)
+            .where((item) => item.isNotEmpty)
             .toList();
       }
 
-      return [trimmed];
+      final resolved = _resolveImageSource(trimmed);
+      return resolved.isEmpty ? const [] : [resolved];
     }
 
     if (value is List) {
       return value
-          .whereType<String>()
+          .map((item) => item?.toString() ?? '')
           .map((item) => item.trim())
+          .where((item) => item.isNotEmpty)
+          .map(_resolveImageSource)
           .where((item) => item.isNotEmpty)
           .toList();
     }
 
     return const [];
+  }
+
+  String _resolveImageSource(String value) {
+    final normalizedValue = value.trim().replaceAll('\\', '/');
+    if (normalizedValue.isEmpty) {
+      return '';
+    }
+
+    if (normalizedValue.startsWith('http://') ||
+        normalizedValue.startsWith('https://') ||
+        normalizedValue.startsWith('assets/')) {
+      return normalizedValue;
+    }
+
+    final bucketMarker = '$_repairImageBucket/';
+    final bucketIndex = normalizedValue.indexOf(bucketMarker);
+    final storagePath = bucketIndex >= 0
+        ? normalizedValue.substring(bucketIndex + bucketMarker.length)
+        : normalizedValue.startsWith('/')
+        ? normalizedValue.substring(1)
+        : normalizedValue;
+
+    if (storagePath.isEmpty) {
+      return '';
+    }
+
+    return Supabase.instance.client.storage
+        .from(_repairImageBucket)
+        .getPublicUrl(storagePath);
   }
 
   String locationLabel() {
@@ -271,7 +301,8 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
     }
 
     final technicianId =
-        _asInt(widget.userData?['us_tt_id']) ?? _asInt(widget.userData?['us_id']);
+        _asInt(widget.userData?['us_tt_id']) ??
+        _asInt(widget.userData?['us_id']);
     if (currentStatus == 'pending' && technicianId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('ไม่พบข้อมูลช่างสำหรับรับงาน')),
@@ -284,10 +315,7 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
     });
 
     final success = switch (targetStatus) {
-      'in_progress' => await ApiService.acceptRepair(
-        repairId,
-        technicianId!,
-      ),
+      'in_progress' => await ApiService.acceptRepair(repairId, technicianId!),
       'done' => await ApiService.finishRepair(repairId),
       _ => await ApiService.updateRepairStatus(
         repairId: repairId,
@@ -488,12 +516,13 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
                         ),
                       )
                     else
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
+                      Column(
                         children: [
                           for (final imageUrl in images)
-                            _RepairImageTile(imageUrl: imageUrl),
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _RepairImagePreview(imageUrl: imageUrl),
+                            ),
                         ],
                       ),
                   ],
@@ -796,46 +825,164 @@ class _DetailRow extends StatelessWidget {
   }
 }
 
-class _RepairImageTile extends StatelessWidget {
+class _RepairImagePreview extends StatefulWidget {
   final String imageUrl;
 
-  const _RepairImageTile({required this.imageUrl});
+  const _RepairImagePreview({required this.imageUrl});
 
-  bool get isNetworkImage {
-    return imageUrl.startsWith('http://') || imageUrl.startsWith('https://');
+  @override
+  State<_RepairImagePreview> createState() => _RepairImagePreviewState();
+}
+
+class _RepairImagePreviewState extends State<_RepairImagePreview> {
+  static const String _bucket = 'repair-images';
+
+  Uint8List? _imageBytes;
+  bool _isLoading = true;
+  bool _useFallbackNetwork = false;
+
+  bool get _isNetworkUrl =>
+      widget.imageUrl.startsWith('http://') ||
+      widget.imageUrl.startsWith('https://');
+
+  @override
+  void initState() {
+    super.initState();
+    _loadImage();
+  }
+
+  /// Extract the storage file path from either a full URL or a relative path.
+  String? _extractStoragePath() {
+    final url = widget.imageUrl.trim().replaceAll('\\', '/');
+    if (url.isEmpty) return null;
+
+    final marker = '$_bucket/';
+    final idx = url.indexOf(marker);
+    if (idx >= 0) return url.substring(idx + marker.length);
+
+    // Already a plain filename / relative path.
+    if (!url.startsWith('http') && !url.startsWith('assets/')) return url;
+
+    return null;
+  }
+
+  Future<void> _loadImage() async {
+    final storagePath = _extractStoragePath();
+    if (storagePath != null && storagePath.isNotEmpty) {
+      try {
+        final bytes = await Supabase.instance.client.storage
+            .from(_bucket)
+            .download(storagePath);
+        if (mounted) {
+          setState(() {
+            _imageBytes = bytes;
+            _isLoading = false;
+          });
+          return;
+        }
+      } catch (e) {
+        debugPrint('[FixDesk] Supabase storage download failed: $e');
+      }
+    }
+
+    // Fallback: let Image.network try the URL directly.
+    if (mounted) {
+      setState(() {
+        _useFallbackNetwork = true;
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _showFullScreen(BuildContext context, {Uint8List? bytes, String? url}) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: const EdgeInsets.all(12),
+        child: Stack(
+          children: [
+            Center(
+              child: InteractiveViewer(
+                child: bytes != null
+                    ? Image.memory(bytes, fit: BoxFit.contain)
+                    : Image.network(url!, fit: BoxFit.contain),
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close, color: Colors.white, size: 28),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        width: (MediaQuery.of(context).size.width - 44) / 2,
-        height: 128,
-        color: const Color(0xFFE5E7EB),
-        child: isNetworkImage
-            ? Image.network(
-                imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return const _ImageFallback();
-                },
-                loadingBuilder: (context, child, progress) {
-                  if (progress == null) return child;
-                  return const Center(child: CircularProgressIndicator());
-                },
-              )
-            : imageUrl.startsWith('assets/')
-            ? Image.asset(
-                imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return const _ImageFallback();
-                },
-              )
-            : const _ImageFallback(),
+    return GestureDetector(
+      onTap: () {
+        if (_imageBytes != null) {
+          _showFullScreen(context, bytes: _imageBytes);
+        } else if (_isNetworkUrl) {
+          _showFullScreen(context, url: widget.imageUrl);
+        }
+      },
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          width: double.infinity,
+          height: 180,
+          color: const Color(0xFFE5E7EB),
+          child: _buildImage(),
+        ),
       ),
     );
+  }
+
+  Widget _buildImage() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    // Successfully downloaded via Supabase SDK.
+    if (_imageBytes != null) {
+      return Image.memory(
+        _imageBytes!,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => const _ImageFallback(),
+      );
+    }
+
+    // Fallback: try Image.network with the original URL.
+    if (_useFallbackNetwork && _isNetworkUrl) {
+      return Image.network(
+        widget.imageUrl,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => const _ImageFallback(),
+        loadingBuilder: (_, child, progress) {
+          if (progress == null) return child;
+          return const Center(child: CircularProgressIndicator());
+        },
+      );
+    }
+
+    if (widget.imageUrl.startsWith('assets/')) {
+      return Image.asset(
+        widget.imageUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => const _ImageFallback(),
+      );
+    }
+
+    return const _ImageFallback();
   }
 }
 
