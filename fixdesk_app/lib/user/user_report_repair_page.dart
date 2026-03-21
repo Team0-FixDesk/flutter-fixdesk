@@ -320,6 +320,11 @@ class _ReportRepairPageState extends State<ReportRepairPage> {
 
       if (_selectedImage != null) {
         imageUrl = await _uploadImage(_selectedImage!);
+        if (imageUrl == null && mounted) {
+          _showError('อัปโหลดรูปภาพไม่สำเร็จ กรุณาลองใหม่');
+          setState(() => _isSubmitting = false);
+          return;
+        }
       }
 
       /// 🔥 STEP 2: สร้าง payload
@@ -330,7 +335,7 @@ class _ReportRepairPageState extends State<ReportRepairPage> {
         'rf_prop_number': _propNumberController.text.trim().isEmpty
             ? null
             : _propNumberController.text.trim(),
-        'rf_problem': _propNumberController.text.trim(),
+        'rf_problem': _detailController.text.trim(),
         'rf_detail': _detailController.text.trim(),
         'rf_room_id': _selectedRoomId,
         'rf_urgency': _selectedUrgency ?? 'low',

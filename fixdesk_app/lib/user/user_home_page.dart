@@ -5,7 +5,6 @@ import '../widgets/menu_card.dart';
 import 'user_report_repair_page.dart';
 import 'user_my_repair_list_page.dart';
 import 'user_my_profile.dart';
-import 'user_detail_repair.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../login/login_page.dart';
 
