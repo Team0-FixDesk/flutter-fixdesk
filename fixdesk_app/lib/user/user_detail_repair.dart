@@ -502,12 +502,12 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
                           const Divider(height: 1, color: Color(0xFFF1F5F9)),
                           _DetailRow(
                             icon: Icons.description_outlined,
-                            label: 'รายละเอียดการเสีย',
-                            value: repairText('rf_detail'),
-                            isMultiline: true,
+
+                            label: 'รายละเอียดอาการเสีย',
+                            value: (repair['rf_problem'] ?? '-').toString(),
+
                           ),
                         ],
-                      ),
                     ),
                     const SizedBox(height: 22),
                     const Text(
