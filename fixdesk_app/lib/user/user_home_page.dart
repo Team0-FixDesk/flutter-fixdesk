@@ -49,9 +49,7 @@ class _HomePageState extends State<HomePage> {
       if (!mounted) return;
 
       setState(() {
-        repairs = data
-            .map((e) => Map<String, dynamic>.from(e))
-            .toList();
+        repairs = data.map((e) => Map<String, dynamic>.from(e)).toList();
 
         isLoadingStats = false;
       });
@@ -230,7 +228,6 @@ class _HomePageState extends State<HomePage> {
             ),
 
             const SizedBox(height: 10),
-
             Expanded(
               child: isLoadingStats
                   ? const Center(child: CircularProgressIndicator())
@@ -255,6 +252,7 @@ class _HomePageState extends State<HomePage> {
                           repair: repair,
                           code: repair['rf_code'] ?? '',
                           currentTabIndex: currentIndex,
+                          userData: widget.userData,
                           title: repair['rf_problem'] ?? '-',
                           location:
                               "${room?['room_name'] ?? '-'} ชั้น ${floor?['fl_name'] ?? '-'} ${building?['bd_name'] ?? ''}",
@@ -262,35 +260,6 @@ class _HomePageState extends State<HomePage> {
                           status: _statusLabel(
                             repair['rf_user_status'] as String?,
                           ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount:
-                              repairs.length > 5 ? 5 : repairs.length,
-                          itemBuilder: (context, index) {
-                            final repair = repairs[index];
-
-                            final room = repair['room'];
-                            final floor = room?['floor'];
-                            final building = floor?['building'];
-
-                            return RepairItem(
-                              repair: repair,
-                              code: repair['rf_code'] ?? '',
-                              currentTabIndex: currentIndex,
-                              userData: widget.userData,
-                              title: repair['rf_problem'] ?? '-',
-                              location:
-                                  "${room?['room_name'] ?? '-'} ชั้น ${floor?['fl_name'] ?? '-'} ${building?['bd_name'] ?? ''}",
-                              priority:
-                                  urgencyLabel(repair['rf_urgency']),
-                              status: _statusLabel(
-                                  repair['rf_user_status'] as String?),
-                              color: _statusColor(
-                                  repair['rf_user_status'] as String?),
-                            );
-                          },
-                        ),
                           color: _statusColor(
                             repair['rf_user_status'] as String?,
                           ),
