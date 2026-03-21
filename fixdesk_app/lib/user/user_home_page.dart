@@ -48,9 +48,7 @@ class _HomePageState extends State<HomePage> {
       if (!mounted) return;
 
       setState(() {
-        repairs = data
-            .map((e) => Map<String, dynamic>.from(e))
-            .toList();
+        repairs = data.map((e) => Map<String, dynamic>.from(e)).toList();
 
         isLoadingStats = false;
       });
@@ -229,7 +227,6 @@ class _HomePageState extends State<HomePage> {
             ),
 
             const SizedBox(height: 10),
-
             Expanded(
               child: isLoadingStats
                   ? const Center(child: CircularProgressIndicator())
