@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../login/login_page.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ReportRepairPage extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -35,7 +36,7 @@ class _ReportRepairPageState extends State<ReportRepairPage> {
   String? _selectedFloorName;
   String? _selectedRoomName;
 
-  File? _selectedImage;
+  XFile? _selectedImage;
   final ImagePicker _picker = ImagePicker();
 
   final Map<String, String> _urgencyMap = {
@@ -270,37 +271,70 @@ class _ReportRepairPageState extends State<ReportRepairPage> {
 
   Future<void> _pickImage() async {
     final picked = await _picker.pickImage(
-      source: ImageSource.camera, // 📸 กล้อง
+      source: ImageSource.camera,
       imageQuality: 70,
     );
 
     if (picked != null) {
       setState(() {
-        _selectedImage = File(picked.path);
+        _selectedImage = picked; // เก็บเป็น XFile แทน
       });
     }
   }
 
-  Future<String?> _uploadImage(File image) async {
-    try {
-      final fileName = 'repair_${DateTime.now().millisecondsSinceEpoch}.jpg';
+  Future<String?> _uploadImage(XFile imageFile) async {
+  try {
+    final supabase = Supabase.instance.client;
+    
+    // 1. ดึงนามสกุลและ MIME Type ให้ตรงกับไฟล์จริงแบบอัตโนมัติ
+    final nameParts = imageFile.name.split('.');
+    final extension = nameParts.length > 1 ? nameParts.last.toLowerCase() : 'jpg';
+    final fileName = 'repair_${DateTime.now().millisecondsSinceEpoch}.$extension';
+    
+    // ถ้าไฟล์ไม่มี MimeType ติดมา ให้เดาจากนามสกุลไฟล์
+    final mimeType = imageFile.mimeType ?? 'image/$extension';
 
-      final supabase = Supabase.instance.client;
-
-      /// ✅ upload
-      await supabase.storage.from('repair-images').upload(fileName, image);
-
-      /// ✅ สร้าง URL เอง (สำคัญมาก)
-      final publicUrl = supabase.storage
-          .from('repair-images')
-          .getPublicUrl(fileName);
-
-      return publicUrl;
-    } catch (e) {
-      debugPrint('Upload error: $e');
-      return null;
+    // 2. แยกการอัปโหลดระหว่าง Web และ Mobile
+    if (kIsWeb) {
+      // 🌐 สำหรับ Web: ต้องแปลงเป็น Bytes และใช้ uploadBinary
+      final bytes = await imageFile.readAsBytes();
+      await supabase.storage.from('repair-images').uploadBinary(
+        fileName,
+        bytes,
+        fileOptions: FileOptions(
+          contentType: mimeType, // ใช้ประเภทไฟล์ที่ตรงกับความจริง
+          upsert: false,
+        ),
+      );
+    } else {
+      // 📱 สำหรับ Mobile: อัปโหลดโดยใช้ File Path ปกติ
+      await supabase.storage.from('repair-images').upload(
+        fileName,
+        File(imageFile.path),
+        fileOptions: FileOptions(
+          contentType: mimeType,
+          upsert: false,
+        ),
+      );
     }
+
+    // 3. สร้าง URL สำหรับเรียกดูภาพ
+    final publicUrl = supabase.storage
+        .from('repair-images')
+        .getPublicUrl(fileName);
+
+    return publicUrl;
+
+  } on StorageException catch (e) {
+    debugPrint('Supabase Storage Error: ${e.message}');
+    if (mounted) _showError('เซิร์ฟเวอร์ปฏิเสธการอัปโหลด: ${e.message}');
+    return null;
+  } catch (e) {
+    debugPrint('Upload error: $e');
+    if (mounted) _showError('เกิดข้อผิดพลาดในการอัปโหลดภาพ');
+    return null;
   }
+}
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -685,12 +719,19 @@ class _ReportRepairPageState extends State<ReportRepairPage> {
                                             borderRadius: BorderRadius.circular(
                                               12,
                                             ),
-                                            child: Image.file(
-                                              _selectedImage!,
-                                              width: double.infinity,
-                                              height: 160,
-                                              fit: BoxFit.cover,
-                                            ),
+                                            child: kIsWeb
+                                                ? Image.network(
+                                                    _selectedImage!.path,
+                                                    width: double.infinity,
+                                                    height: 160,
+                                                    fit: BoxFit.cover,
+                                                  )
+                                                : Image.file(
+                                                    File(_selectedImage!.path),
+                                                    width: double.infinity,
+                                                    height: 160,
+                                                    fit: BoxFit.cover,
+                                                  ),
                                           )
                                         : CustomPaint(
                                             painter: _DashedRectPainter(
