@@ -89,6 +89,7 @@ class ApiService {
         .select('''
           rf_id,
           rf_code,
+          rf_prop_number,
           rf_problem,
           rf_detail,
           rf_image,
