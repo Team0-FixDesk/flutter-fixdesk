@@ -222,6 +222,16 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
     return parts.isEmpty ? '-' : parts.join(' ');
   }
 
+  String repairText(String key) {
+    final value = repair[key];
+    if (value == null) {
+      return '-';
+    }
+
+    final text = value.toString().trim();
+    return text.isEmpty ? '-' : text;
+  }
+
   int currentStepIndex(String? status) {
     switch (status) {
       case 'pending':
@@ -481,7 +491,7 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
                           _DetailRow(
                             icon: Icons.inventory_2_outlined,
                             label: 'อุปกรณ์',
-                            value: (repair['rf_problem'] ?? '-').toString(),
+                            value: repairText('rf_problem'),
                           ),
                           const Divider(height: 1, color: Color(0xFFF1F5F9)),
                           _DetailRow(
@@ -492,8 +502,8 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
                           const Divider(height: 1, color: Color(0xFFF1F5F9)),
                           _DetailRow(
                             icon: Icons.description_outlined,
-                            label: 'รายละเอียดอาการเสีย',
-                            value: (repair['rf_detail'] ?? '-').toString(),
+                            label: 'รายละเอียดการเสีย',
+                            value: repairText('rf_detail'),
                             isMultiline: true,
                           ),
                         ],
