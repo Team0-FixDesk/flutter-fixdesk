@@ -4,6 +4,9 @@ import '../user/user_detail_repair.dart';
 import 'tech_repair_list_page.dart';
 import 'tech_my_profile.dart';
 import '../theme/app_theme.dart';
+import '../widgets/AppHead.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../login/login_page.dart';
 
 class TechnicianHomePage extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -129,40 +132,20 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
     return SafeArea(
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-            color: Colors.white,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Image.asset('assets/images/LOGO.png', width: 40),
-                    const SizedBox(width: 10),
-                    Text(
-                      "FixDesk",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  "สวัสดีคุณ $fullName",
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const Text(
-                  "Dashboard สำหรับช่าง",
-                  style: TextStyle(color: Colors.grey),
-                ),
-              ],
-            ),
+          AppHeader(
+            name: fullName,
+            showGreeting: true,
+            onLogout: () async {
+              await Supabase.instance.client.auth.signOut();
+
+              if (!context.mounted) return;
+
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginPage()),
+                (route) => false,
+              );
+            },
           ),
 
           const SizedBox(height: 16),

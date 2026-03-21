@@ -5,6 +5,7 @@ import '../widgets/AppHead.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../login/login_page.dart';
 
 class ReportRepairPage extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -454,9 +455,21 @@ class _ReportRepairPageState extends State<ReportRepairPage> {
         child: Column(
           children: [
             /// ✅ HEADER (เหมือนทุกหน้า)
-            Column(children: [const AppHeader(showGreeting: false)]),
+            AppHeader(
+              showGreeting: true,
+              onLogout: () async {
+                await Supabase.instance.client.auth.signOut();
 
-            /// 🔙 BACK + TITLE
+                if (!context.mounted) return;
+
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                  (route) => false,
+                );
+              },
+            ),
+
             /// 🔙 BACK + TITLE
             Container(
               color: Colors.white,

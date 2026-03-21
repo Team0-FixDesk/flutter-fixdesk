@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../component/profile_inputField.dart';
+import '../widgets/AppHead.dart';
+import '../login/login_page.dart';
 
 class TechEditProfilePage extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -13,7 +15,6 @@ class TechEditProfilePage extends StatefulWidget {
 }
 
 class _TechEditProfilePageState extends State<TechEditProfilePage> {
-
   final supabase = Supabase.instance.client;
 
   late TextEditingController usernameController;
@@ -32,14 +33,17 @@ class _TechEditProfilePageState extends State<TechEditProfilePage> {
   void initState() {
     super.initState();
 
-    usernameController =
-        TextEditingController(text: widget.userData['us_user_name']);
+    usernameController = TextEditingController(
+      text: widget.userData['us_user_name'],
+    );
 
-    nameController =
-        TextEditingController(text: widget.userData['us_first_name_th']);
+    nameController = TextEditingController(
+      text: widget.userData['us_first_name_th'],
+    );
 
-    surnameController =
-        TextEditingController(text: widget.userData['us_last_name_th']);
+    surnameController = TextEditingController(
+      text: widget.userData['us_last_name_th'],
+    );
 
     /// format phone ตอนโหลด
     phoneController = TextEditingController(
@@ -86,21 +90,25 @@ class _TechEditProfilePageState extends State<TechEditProfilePage> {
 
     if (digits.length != 10) return phone;
 
-    return '${digits.substring(0,3)}-${digits.substring(3,6)}-${digits.substring(6)}';
+    return '${digits.substring(0, 3)}-${digits.substring(3, 6)}-${digits.substring(6)}';
   }
 
   Future<void> updateProfile() async {
-
     String firstName = nameController.text.trim();
     String lastName = surnameController.text.trim();
-
-    /// เอา dash ออกก่อน validate
     String phone = phoneController.text.replaceAll('-', '').trim();
-
     String password = passwordController.text.trim();
     String confirm = confirmPasswordController.text.trim();
 
-    /// validate phone
+    /// ✅ validate name
+    if (firstName.isEmpty || lastName.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("กรุณากรอกชื่อและนามสกุล")));
+      return;
+    }
+
+    /// ✅ validate phone
     if (phone.length != 10) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("เบอร์โทรศัพท์ต้องมี 10 หลัก")),
@@ -116,99 +124,78 @@ class _TechEditProfilePageState extends State<TechEditProfilePage> {
 
     /// password
     if (password.isNotEmpty && password != "**********") {
-
       if (password != confirm) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("รหัสผ่านไม่ตรงกัน")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("รหัสผ่านไม่ตรงกัน")));
         return;
       }
 
       updateData['us_user_pass'] = password;
     }
 
-    await supabase
-        .from('users')
-        .update(updateData)
-        .eq('us_id', widget.userData['us_id']);
+    try {
+      await supabase
+          .from('users')
+          .update(updateData)
+          .eq('us_id', widget.userData['us_id']);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("แก้ไขข้อมูลสำเร็จ")),
-    );
+      if (!mounted) return;
 
-    Navigator.pop(context);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("แก้ไขข้อมูลสำเร็จ")));
+
+      Navigator.pop(context, true);
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("เกิดข้อผิดพลาด: $e")));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       body: Container(
         color: Colors.grey.shade100,
         child: SafeArea(
           child: Column(
             children: [
-
               /// HEADER
+              AppHeader(
+                showGreeting: true,
+                onLogout: () async {
+                  await Supabase.instance.client.auth.signOut();
+
+                  if (!context.mounted) return;
+
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                    (route) => false,
+                  );
+                },
+              ),
               Container(
-                padding: const EdgeInsets.fromLTRB(12, 20, 20, 10),
                 color: Colors.white,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
+                child: Row(
                   children: [
-
-                    Row(
-                      children: [
-
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back),
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                        ),
-
-                        Image.asset(
-                          'assets/images/LOGO.png',
-                          width: 40,
-                          height: 40,
-                        ),
-
-                        const SizedBox(width: 10),
-
-                        Text(
-                          "FixDesk",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                        ),
-                      ],
+                    InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => Navigator.pop(context, false),
+                      child: const Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(Icons.arrow_back_ios_new_rounded, size: 22),
+                      ),
                     ),
-
-                    const SizedBox(height: 12),
-
-                    Padding(
-                      padding: const EdgeInsets.only(left: 10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-
-                          Text(
-                            "สวัสดี คุณ$firstName",
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-
-                          const SizedBox(height: 4),
-
-                          const Text(
-                            "ยินดีต้อนรับสู่ FixDesk",
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ],
+                    const SizedBox(width: 8),
+                    const Text(
+                      "แก้ไขโปรไฟล์",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
@@ -223,7 +210,6 @@ class _TechEditProfilePageState extends State<TechEditProfilePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-
                         const Text(
                           "แก้ไขโปรไฟล์",
                           style: TextStyle(
@@ -250,7 +236,6 @@ class _TechEditProfilePageState extends State<TechEditProfilePage> {
 
                           child: Column(
                             children: [
-
                               ProfileInputField(
                                 label: "ชื่อผู้ใช้งาน",
                                 controller: usernameController,
@@ -345,12 +330,11 @@ class _TechEditProfilePageState extends State<TechEditProfilePage> {
 
 /// PHONE FORMATTER
 class PhoneNumberFormatter extends TextInputFormatter {
-
   @override
   TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue,
-      TextEditingValue newValue) {
-
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     String digits = newValue.text.replaceAll(RegExp(r'\D'), '');
 
     if (digits.length > 10) {
@@ -362,10 +346,10 @@ class PhoneNumberFormatter extends TextInputFormatter {
     if (digits.length <= 3) {
       formatted = digits;
     } else if (digits.length <= 6) {
-      formatted = '${digits.substring(0,3)}-${digits.substring(3)}';
+      formatted = '${digits.substring(0, 3)}-${digits.substring(3)}';
     } else {
       formatted =
-          '${digits.substring(0,3)}-${digits.substring(3,6)}-${digits.substring(6)}';
+          '${digits.substring(0, 3)}-${digits.substring(3, 6)}-${digits.substring(6)}';
     }
 
     return TextEditingValue(

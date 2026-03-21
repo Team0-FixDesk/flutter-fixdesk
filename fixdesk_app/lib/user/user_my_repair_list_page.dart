@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fixdesk_app/service/api_service.dart';
-import '../widgets/AppHead.dart'; // ✅ ใช้ AppHeader
+import '../widgets/AppHead.dart';
 import 'user_detail_repair.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../login/login_page.dart';
 
 class MyRepairListPage extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -121,10 +123,20 @@ class _MyRepairListPageState extends State<MyRepairListPage> {
         child: Column(
           children: [
             /// ✅ แก้ตรงนี้ (ใช้ title แทน)
-            const AppHeader(
+            AppHeader(
               title: "รายการแจ้งซ่อมของฉัน",
               titleSize: 18,
-               // 🔥 ปรับให้เท่าหน้าอื่น
+              onLogout: () async {
+                await Supabase.instance.client.auth.signOut();
+
+                if (!context.mounted) return;
+
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                  (route) => false,
+                );
+              },
             ),
 
             /// SEARCH + FILTER
