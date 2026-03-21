@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../service/api_service.dart';
 import '../user/user_detail_repair.dart';
-import 'tech_detail_repair.dart';
 import '../widgets/AppHead.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../login/login_page.dart';
@@ -234,54 +233,14 @@ class _TechRepairListPageState extends State<TechRepairListPage> {
                           status: _statusLabel(status),
                           color: _statusColor(status),
                           currentTabIndex: 1,
-                          // onTabSelected: widget.onTabSelected,
+                          userData: widget.userData,
+                          onAfterDetailClosed: fetchRepairs,
+                          onTabSelected: widget.onTabSelected,
                           repair: item,
                         );
                       },
                     ),
             ),
-          ),
-
-          /// LIST
-          Expanded(
-            child: isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : filteredRepairs.isEmpty
-                ? Center(
-                    child: Text(
-                      'ไม่มีงาน',
-                      style: TextStyle(color: Colors.grey.shade600),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: filteredRepairs.length,
-                    itemBuilder: (context, index) {
-                      final item = filteredRepairs[index];
-                      final status = item['rf_user_status']?.toString();
-
-                      final room = item['room'];
-                      final floor = room?['floor'];
-                      final building = floor?['building'];
-
-                      return RepairItem(
-                        code: item['rf_code'] ?? '',
-                        title: item['rf_problem'] ?? '-',
-                        location:
-                            "${room?['room_name'] ?? '-'} ชั้น ${floor?['fl_name'] ?? '-'} ${building?['bd_name'] ?? ''}",
-                        priority: _urgencyLabel(item['rf_urgency']),
-                        status: _statusLabel(status),
-                        color: _statusColor(status),
-                        currentTabIndex: 1,
-                        userData: widget.userData,
-                        onAfterDetailClosed: fetchRepairs,
-                        onTabSelected: widget.onTabSelected,
-                        repair: item,
-                      );
-                    },
-                  ),
-          ),
-        ],
           ],
         ),
       ),

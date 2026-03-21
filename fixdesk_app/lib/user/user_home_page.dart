@@ -5,7 +5,6 @@ import '../widgets/menu_card.dart';
 import 'user_report_repair_page.dart';
 import 'user_my_repair_list_page.dart';
 import 'user_my_profile.dart';
-import 'user_detail_repair.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../login/login_page.dart';
 
@@ -255,6 +254,7 @@ class _HomePageState extends State<HomePage> {
                           repair: repair,
                           code: repair['rf_code'] ?? '',
                           currentTabIndex: currentIndex,
+                          userData: widget.userData,
                           title: repair['rf_problem'] ?? '-',
                           location:
                               "${room?['room_name'] ?? '-'} ชั้น ${floor?['fl_name'] ?? '-'} ${building?['bd_name'] ?? ''}",
@@ -262,35 +262,6 @@ class _HomePageState extends State<HomePage> {
                           status: _statusLabel(
                             repair['rf_user_status'] as String?,
                           ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount:
-                              repairs.length > 5 ? 5 : repairs.length,
-                          itemBuilder: (context, index) {
-                            final repair = repairs[index];
-
-                            final room = repair['room'];
-                            final floor = room?['floor'];
-                            final building = floor?['building'];
-
-                            return RepairItem(
-                              repair: repair,
-                              code: repair['rf_code'] ?? '',
-                              currentTabIndex: currentIndex,
-                              userData: widget.userData,
-                              title: repair['rf_problem'] ?? '-',
-                              location:
-                                  "${room?['room_name'] ?? '-'} ชั้น ${floor?['fl_name'] ?? '-'} ${building?['bd_name'] ?? ''}",
-                              priority:
-                                  urgencyLabel(repair['rf_urgency']),
-                              status: _statusLabel(
-                                  repair['rf_user_status'] as String?),
-                              color: _statusColor(
-                                  repair['rf_user_status'] as String?),
-                            );
-                          },
-                        ),
                           color: _statusColor(
                             repair['rf_user_status'] as String?,
                           ),

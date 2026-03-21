@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:fixdesk_app/service/api_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/AppHead.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../login/login_page.dart';
 
 class UserDetailRepairPage extends StatefulWidget {
