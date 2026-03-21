@@ -4,20 +4,22 @@ class AppHeader extends StatelessWidget {
   final String? name;
   final bool showGreeting;
   final String? title;
-  final double? titleSize; // ✅ เพิ่ม
+  final double? titleSize;
+  final VoidCallback? onLogout; // ✅ เพิ่ม
 
   const AppHeader({
     super.key,
     this.name,
     this.showGreeting = false,
     this.title,
-    this.titleSize, // ✅ เพิ่ม
+    this.titleSize,
+    this.onLogout, // ✅ เพิ่ม
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 16), // 🔥 ลดล่างนิดนึง
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -31,19 +33,44 @@ class AppHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// TOP (LOGO + NAME)
+          /// 🔵 TOP (LOGO + NAME + LOGOUT)
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Image.asset('assets/images/LOGO.png', width: 32),
-              const SizedBox(width: 10),
-              Text(
-                "FixDesk",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+              /// LEFT (LOGO + NAME)
+              Row(
+                children: [
+                  Image.asset('assets/images/LOGO.png', width: 32),
+                  const SizedBox(width: 10),
+                  Text(
+                    "FixDesk",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ],
               ),
+
+              /// RIGHT (LOGOUT BUTTON)
+              if (onLogout != null)
+                InkWell(
+                  borderRadius: BorderRadius.circular(10),
+                  onTap: onLogout,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.logout,
+                      size: 20,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                ),
             ],
           ),
 
@@ -61,12 +88,12 @@ class AppHeader extends StatelessWidget {
 
           /// Title (List / Profile)
           if (title != null) ...[
-            const SizedBox(height: 12), // 🔥 ลด spacing
+            const SizedBox(height: 12),
             Text(
               title!,
               style: TextStyle(
-                fontSize: titleSize ?? 16, // 🔥 ตรงนี้สำคัญ!
-                fontWeight: FontWeight.bold, // 🔥 ปรับให้ modern ขึ้น
+                fontSize: titleSize ?? 16,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ],

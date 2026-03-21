@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/AppHead.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../login/login_page.dart';
 
 class UserDetailRepairPage extends StatelessWidget {
   final Map<String, dynamic> repair;
@@ -179,7 +181,20 @@ class UserDetailRepairPage extends StatelessWidget {
             Column(
               children: [
                 /// 🔵 HEADER (โลโก้ + FixDesk)
-                const AppHeader(showGreeting: false),
+                AppHeader(
+                  showGreeting: true,
+                  onLogout: () async {
+                    await Supabase.instance.client.auth.signOut();
+
+                    if (!context.mounted) return;
+
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginPage()),
+                      (route) => false,
+                    );
+                  },
+                ),
 
                 /// 🔙 BACK + TITLE
                 Container(
