@@ -508,6 +508,7 @@ class _UserDetailRepairPageState extends State<UserDetailRepairPage> {
                           ),
                         ],
                       ),
+                    ),
                     const SizedBox(height: 22),
                     const Text(
                       'รูปภาพ',
