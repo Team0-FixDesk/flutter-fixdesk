@@ -40,7 +40,6 @@ class _TechRepairListPageState extends State<TechRepairListPage> {
       final status = item['rf_user_status'] ?? '';
 
       bool matchKeyword = code.contains(keyword.toLowerCase());
-
       bool matchStatus =
           selectedStatus == 'ทั้งหมด' || _statusLabel(status) == selectedStatus;
 
@@ -116,10 +115,8 @@ class _TechRepairListPageState extends State<TechRepairListPage> {
     return Scaffold(
       backgroundColor: const Color(0xfff3f4f6),
       body: SafeArea(
-        // ✅ เพิ่มตรงนี้
         child: Column(
           children: [
-            /// ✅ แก้ตรงนี้ (ใช้ title แทน)
             AppHeader(
               title: "รายการแจ้งซ่อมของฉัน",
               titleSize: 18,
@@ -135,7 +132,7 @@ class _TechRepairListPageState extends State<TechRepairListPage> {
                 );
               },
             ),
-            
+
             /// SEARCH + FILTER
             Container(
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
@@ -160,9 +157,7 @@ class _TechRepairListPageState extends State<TechRepairListPage> {
                       ),
                     ),
                   ),
-
                   const SizedBox(width: 10),
-
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
@@ -202,7 +197,7 @@ class _TechRepairListPageState extends State<TechRepairListPage> {
               ),
             ),
 
-            /// LIST
+            /// LIST (เหลืออันเดียว)
             Expanded(
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
@@ -254,6 +249,7 @@ class _TechRepairListPageState extends State<TechRepairListPage> {
   }
 }
 
+/// ================== ITEM ==================
 class RepairItem extends StatelessWidget {
   final String code;
   final String title;
@@ -316,16 +312,13 @@ class RepairItem extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// TOP
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text("#$code", style: const TextStyle(color: Colors.grey)),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: priorityColor,
                   borderRadius: BorderRadius.circular(8),
@@ -341,21 +334,14 @@ class RepairItem extends StatelessWidget {
               ),
             ],
           ),
-
           const SizedBox(height: 6),
-
           Text(
             title,
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
-
           const SizedBox(height: 8),
-
           Text(location, style: const TextStyle(color: Colors.grey)),
-
           const Divider(),
-
-          /// STATUS + BUTTON
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -363,7 +349,6 @@ class RepairItem extends StatelessWidget {
                 status,
                 style: TextStyle(color: color, fontWeight: FontWeight.bold),
               ),
-
               InkWell(
                 onTap: () async {
                   final selectedTab = await Navigator.push<int>(
@@ -379,17 +364,13 @@ class RepairItem extends StatelessWidget {
 
                   await onAfterDetailClosed?.call();
 
-                  if (!context.mounted || selectedTab == null) {
-                    return;
-                  }
+                  if (!context.mounted || selectedTab == null) return;
 
                   onTabSelected?.call(selectedTab);
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
+                      horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade200,
                     borderRadius: BorderRadius.circular(10),
